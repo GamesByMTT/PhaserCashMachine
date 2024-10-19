@@ -1,7 +1,6 @@
 import { Scene } from 'phaser';
 import { Slots } from '../scripts/Slots';
 import { UiContainer } from '../scripts/UiContainer';
-import { LineGenerator } from '../scripts/Lines';
 import { UiPopups } from '../scripts/UiPopup';
 import LineSymbols from '../scripts/LineSymbols';
 import { 
@@ -9,10 +8,8 @@ import {
     ResultData, 
     currentGameData, 
     initData, 
-    gambleResult 
 } from '../scripts/Globals';
 import { gameConfig } from '../scripts/appconfig';
-import BonusScene from './BonusScene';
 import SoundManager from '../scripts/SoundManager';
 
 export default class MainScene extends Scene {
@@ -32,13 +29,12 @@ export default class MainScene extends Scene {
     taskbar!: Phaser.GameObjects.Sprite;
     slotBg!: Phaser.GameObjects.Sprite;
     slot!: Slots;
-    lineGenerator!: LineGenerator;
     soundManager!: SoundManager;
     uiContainer!: UiContainer;
     uiPopups!: UiPopups;    
     lineSymbols!: LineSymbols;
     private mainContainer!: Phaser.GameObjects.Container;
-
+    private Color: "red" | "green" = "green"
     constructor() {
         super({ key: 'MainScene' });
     }
@@ -48,21 +44,20 @@ export default class MainScene extends Scene {
 
         // Container for better organization and potential performance
         this.mainContainer = this.add.container();
-
         this.soundManager = new SoundManager(this);
         console.log("MainScene Loaded on Cash Machine");
 
-        this.gameBg = this.add.sprite(width / 2, height / 2, 'greenBackground')
+        this.gameBg = this.add.sprite(width / 2, height / 2, `${this.Color}Background`)
             .setDepth(0)
             .setDisplaySize(1920, 1080);
-        this.greenLeftBorder = this.add.sprite(width * 0.07, height/2.3, "greenLeftBorder").setScale(0.6)
-        this.greenRightBorder = this.add.sprite(width * 0.93, height/2.3, "greenRightBorder").setScale(0.6)
-        this.greenFirstCircle = this.add.sprite(width * 0.25, height/1.9, "greenCircle").setScale(0.7);
-        this.greenSecondCircle = this.add.sprite(width * 0.75, height/1.9, "greenCircle").setScale(0.7);
-        this.greenHead = this.add.sprite(width/2, height / 5.3, "greenHead").setScale(0.9); 
-        this.greenLogo = this.add.sprite(width/2, height/6.2, "greenLogo").setScale(0.8);
+        this.greenLeftBorder = this.add.sprite(width * 0.07, height/2.3, `${this.Color}LeftBorder`).setScale(0.6)
+        this.greenRightBorder = this.add.sprite(width * 0.93, height/2.3, `${this.Color}RightBorder`).setScale(0.6)
+        this.greenFirstCircle = this.add.sprite(width * 0.25, height/1.9, `${this.Color}Circle`).setScale(0.7);
+        this.greenSecondCircle = this.add.sprite(width * 0.75, height/1.9, `${this.Color}Circle`).setScale(0.7);
+        this.greenHead = this.add.sprite(width/2, height / 5.3, `${this.Color}Head`).setScale(0.9); 
+        this.greenLogo = this.add.sprite(width/2, height/6.2, `${this.Color}Logo`).setScale(0.8);
         this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar");
-        this.greencenterFrame = this.add.sprite(width/2, height/1.8, "greenCentreFrame").setScale(0.48)
+        this.greencenterFrame = this.add.sprite(width/2, height/1.8, `${this.Color}CentreFrame`).setScale(0.48)
         this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3 );
         this.slotBg = this.add.sprite(width/2, height/1.8, "slotBg")
         this.mainContainer.add([this.gameBg, this.greenLeftBorder, this.slotBg, this.greenRightBorder, this.greenFirstCircle, this.greenSecondCircle, this.greenHead, this.greenLogo, this.whatUSeeText, this.greencenterFrame, this.taskbar]);
@@ -72,8 +67,8 @@ export default class MainScene extends Scene {
         this.mainContainer.add(this.uiContainer);
 
         this.slot = new Slots(this, this.uiContainer, () => this.onResultCallBack(), this.soundManager);
-        this.lineGenerator = new LineGenerator(this, this.slot.slotSymbols[0][0].symbol.height + 50, this.slot.slotSymbols[0][0].symbol.width + 10);
-        this.mainContainer.add([this.lineGenerator, this.slot]);
+        // this.lineGenerator = new LineGenerator(this, this.slot.slotSymbols[0][0].symbol.height + 50, this.slot.slotSymbols[0][0].symbol.width + 10);
+        this.mainContainer.add([this.slot]);
 
         this.uiPopups = new UiPopups(this, this.uiContainer, this.soundManager);
         this.mainContainer.add(this.uiPopups);
@@ -81,9 +76,6 @@ export default class MainScene extends Scene {
         // this.lineSymbols = new LineSymbols(this, 10, 12, this.lineGenerator);
         // this.mainContainer.add(this.lineSymbols);
     }
-
- 
-
     update(time: number, delta: number) {
         this.uiContainer.update();
     }
@@ -91,17 +83,22 @@ export default class MainScene extends Scene {
     private onResultCallBack() {
         this.uiContainer.onSpin(false);
         this.soundManager.stopSound("onSpin"); 
-        this.lineGenerator.showLines(ResultData.gameData.linesToEmit);
+        // this.lineGenerator.showLines(ResultData.gameData.linesToEmit);
     }
 
     private onSpinCallBack() {
         this.soundManager.playSound("onSpin");
         this.slot.moveReel();
-        this.lineGenerator.hideLines();
+        // this.lineGenerator.hideLines();
     }
 
     recievedMessage(msgType: string, msgParams: any) {
         if (msgType === 'ResultData') {
+            if(ResultData.gameData.hasReSpin){
+
+            }else{
+
+            }
             // Use setTimeout for better performance in this case
             setTimeout(() => {
                 this.handleResultData();
@@ -111,28 +108,16 @@ export default class MainScene extends Scene {
             setTimeout(() => {
                 this.slot.stopTween();
             }, 1000);
-        } else if (msgType === 'GambleResult') {
-            this.uiContainer.currentWiningText.updateLabelText(gambleResult.gamleResultData.currentWining.toString());
-        }
+        } 
     }
 
     // Handle ResultData logic separately
     private handleResultData() {
-        if (ResultData.gameData.isBonus) {
-            if (this.uiContainer.isAutoSpinning) {
-                // Emit events directly instead of simulating clicks
-                this.uiContainer.autoBetBtn.emit('pointerdown');
-                this.uiContainer.autoBetBtn.emit('pointerup'); 
-            }
-            Globals.SceneHandler?.addScene('BonusScene', BonusScene, true);
-        }
-
         this.uiContainer.currentWiningText.updateLabelText(ResultData.playerData.currentWining.toString());
-        currentGameData.currentBalance = ResultData.playerData.Balance;
+        currentGameData.currentBalance = Number(ResultData.playerData.Balance);
         let betValue = (initData.gameData.Bets[currentGameData.currentBetIndex]) * 20;
         let winAmount = ResultData.gameData.WinAmout;
         this.uiContainer.currentBalanceText.updateLabelText(currentGameData.currentBalance.toFixed(2));
-
         if (winAmount >= 15 * betValue && winAmount < 20 * betValue) {
             this.showWinPopup(winAmount, 'hugeWinPopup');
         } else if (winAmount >= 20 * betValue && winAmount < 25 * betValue) {
@@ -171,12 +156,8 @@ export default class MainScene extends Scene {
         });
 
         // Create coin flip animation once
-        this.createCoinFlipAnimation();
 
-        const winningSprite = this.add.sprite(gameConfig.scale.width / 4, gameConfig.scale.height * 0.8, `coin0`)
-            .setDepth(13)
-            .setScale(0.7)
-            .play('coinFlip');
+       
 
         const winSprite = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY - 50, spriteKey)
             .setScale(0.8)
@@ -196,25 +177,10 @@ export default class MainScene extends Scene {
                     megaWinBg.destroy();
                     megaWinStar.destroy();
                     winSprite.destroy();
-                    winningSprite.stop();
-                    winningSprite.destroy();
                 });
             }
         });
     }
 
-    // Separate function for coin flip animation
-    private createCoinFlipAnimation() {
-        const coinFrames = [];
-        for (let i = 0; i < 19; i++) {
-            coinFrames.push({ key: `coin${i}` });
-        }
-
-        this.anims.create({
-            key: `coinFlip`,
-            frames: coinFrames,
-            frameRate: 10,
-            repeat: -1
-        });
-    }
+   
 }

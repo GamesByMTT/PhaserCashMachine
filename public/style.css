@@ -13,7 +13,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url('./src/sprites/Background.jpg');
     background-image: cover;
     background-repeat: no-repeat;
 }

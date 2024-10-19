@@ -46,9 +46,8 @@ export class SocketManager {
       console.log("Connected to the server");
       this.socket.on("message", (message : any) => {
         const data = JSON.parse(message);
-        console.log(data, "data");
-        
         if(data.id == "InitData" ) {
+          console.log(data, "data");
           if(initData.gameData.Bets.length != 0){
             if(Globals.SceneHandler?.getScene("Disconnection")){
               Globals.SceneHandler.removeScene("Disconnection");
@@ -63,22 +62,10 @@ export class SocketManager {
           }
         }
         if(data.id == "ResultData"){
-              ResultData.gameData = data.message.GameData;
+              ResultData.gameData = data.message.gameData;
               ResultData.playerData = data.message.PlayerData;
               Globals.emitter?.Call("ResultData");
-              console.log(ResultData);
-        }
-        if(data.id == "gambleInitData"){
-          gambleData.gambleCards = data.message
-        }
-        if(data.id == "gambleResultData"){
-          gambleResult.gamleResultData = data.message
-        
-        }
-        if(data.id == "GambleResult"){
-          gambleResult.gamleResultData = data.message
-          ResultData.playerData = data.message
-          Globals.emitter?.Call("GambleResult");
+              console.log(ResultData, "data");
         }
       });
     });
@@ -106,7 +93,7 @@ export class SocketManager {
     });
   }
   sendMessage(id : string, message: any) {
-    // console.log(message, "sending message");
+    console.log(message, "sending message");
     this.socket.emit(
       "message",
       JSON.stringify({ id: id, data: message })

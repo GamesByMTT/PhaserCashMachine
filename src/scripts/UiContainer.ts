@@ -54,7 +54,7 @@ export class UiContainer extends Phaser.GameObjects.Container {
                 const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
                 const updatedBetAmount = betAmount * 20;
                 this.CurrentLineText.updateLabelText(betAmount);
-                this.CurrentBetText.updateLabelText(updatedBetAmount.toString());
+                // this.CurrentBetText.updateLabelText(updatedBetAmount.toString());
             }
             this.scene.time.delayedCall(200, () => {
                 this.pBtn.setTexture('pBtn');
@@ -108,13 +108,13 @@ export class UiContainer extends Phaser.GameObjects.Container {
                 // this.autoBetBtn.emit('pointerup'); // Simulate the pointerup event (if needed)
                 return;
             }
-        // tween added to scale transition
+        // tween added to scale traINnsition
             this.scene.tweens.add({
                 targets: this.spinBtn,
                 duration: 100,
                 onComplete: () => {
                     // Send message and update the balance
-                    Globals.Socket?.sendMessage("SPIN", { currentBet: currentGameData.currentBetIndex, currentLines: 9, spins: 1 });
+                    Globals.Socket?.sendMessage("SPIN", { currentBet: currentGameData.currentBetIndex, matrixX: currentGameData.currentBetIndex + 1, currentLines: 1});
                     currentGameData.currentBalance -= initData.gameData.Bets[currentGameData.currentBetIndex];
                     this.currentBalanceText.updateLabelText(currentGameData.currentBalance.toFixed(2));
                     // Trigger the spin callback
