@@ -26,55 +26,49 @@ export class Slots extends Phaser.GameObjects.Container {
     private reelTweens: Phaser.Tweens.Tween[] = []; // Array for reel tweens
     private totalVisibleSymbols: number = 3; // Number of visible symbols on the reel
      private Color: "red" | "green" = "green"
-    private reelSymbolSets: string[][] = [
-        [`${this.Color}slots0_1`, `${this.Color}slots1_0`, `${this.Color}slots2_0`, `${this.Color}slots3_0`, `${this.Color}slots4_0`],
-        [`${this.Color}slots0_1`, `${this.Color}slots5_0`, `${this.Color}slots3_0`],
-        [`${this.Color}slots0_1`, `${this.Color}slots5_0`, `${this.Color}slots3_0`, `${this.Color}slots6_0`]
-    ];
     constructor(scene: Phaser.Scene, uiContainer: UiContainer, callback: () => void, SoundManager : SoundManager) {
         super(scene);
-
         this.resultCallBack = callback;
         this.uiContainer = uiContainer;
         this.SoundManager = SoundManager
         this.slotMask = new Phaser.GameObjects.Graphics(scene);
         
         this.maskWidth = gameConfig.scale.width;
-        this.maskHeight = 400;
+        this.maskHeight = 420;
         // this.slotMask.fillStyle(0xffffff, 1);
         this.slotMask.fillRoundedRect(0, 0, this.maskWidth, this.maskHeight, 20);
         // mask Position set
         this.slotMask.setPosition(
             gameConfig.scale.width / 6,
-            gameConfig.scale.height / 2.75
+            gameConfig.scale.height / 2.8
         );
         // this.add(this.slotMask);
         // Filter and pick symbol keys based on the criteria
         this.symbolKeys = this.getFilteredSymbolKeys();
         
         // Assume all symbols have the same width and height
-        const exampleSymbol = new Phaser.GameObjects.Sprite(scene, 0, 0, this.getRandomSymbolKey(0));
+        const exampleSymbol = new Phaser.GameObjects.Sprite(scene, 0, 0, this.getRandomSymbolKey());
         this.symbolWidth = exampleSymbol.displayWidth/ 3;
         this.symbolHeight = exampleSymbol.displayHeight/3;
         this.spacingX = this.symbolWidth * 3.25; // Add some spacing
-        this.spacingY = this.symbolHeight * 5; // Add some spacing
+        this.spacingY = this.symbolHeight * 3; // Add some spacing
         // console.log(this.symbolHeight, "symbolHeightsymbolHeightsymbolHeight");
         const startPos = {
             x: gameConfig.scale.width /4.1,
-            y: gameConfig.scale.height / 1.9    
+            y: gameConfig.scale.height /1.85    
         };
-        const totalSymbol = 12;
+        const totalSymbol = 3;
         const visibleSymbol = 1;
         const startIndex = 1;
         const initialYOffset = (totalSymbol - startIndex - visibleSymbol) * this.spacingY;
-        const totalSymbolsPerReel = 16; 
+        const totalSymbolsPerReel = 3; 
         for (let i = 0; i < 3; i++) { 
             const reelContainer = new Phaser.GameObjects.Container(this.scene);
             this.reelContainers.push(reelContainer); // Store the container for future use
             
             this.slotSymbols[i] = [];
             for (let j = 0; j < totalSymbolsPerReel; j++) { // 3 rows
-                let symbolKey = this.getRandomSymbolKey(i); // Get a random symbol key
+                let symbolKey = this.getRandomSymbolKey(); // Get a random symbol key
                 // console.log(symbolKey);
                 let slot = new Symbols(scene, symbolKey, { x: i, y: j }, reelContainer);
                 slot.symbol.setMask(new Phaser.Display.Masks.GeometryMask(scene, this.slotMask));
@@ -93,24 +87,22 @@ export class Slots extends Phaser.GameObjects.Container {
             this.add(reelContainer); 
         }
     }
+    
+
     getFilteredSymbolKeys(): string[] {
         // Filter symbols based on the pattern
         const allSprites = Globals.resources;
         const allSpriteKeys = Object.keys(Globals.resources); // Get all keys from Globals.resources
         const filteredSprites = allSpriteKeys.filter(spriteName => {
-            const regex = /^`${this.Color}slots`\d+_\d+$/; // Your original regex is correct
+            const regex = new RegExp(`^${this.Color}slots\\d+_\\d+$`);
             return regex.test(spriteName);
         });
         return filteredSprites;
     }
 
-    getRandomSymbolKey(reelIndex: number): string {
-        if (reelIndex < 0 || reelIndex >= this.reelSymbolSets.length) {
-            reelIndex = 0; // Default to the first reel if an invalid index is provided
-        }
-        const symbolSet = this.reelSymbolSets[reelIndex];
-        const randomIndex = Phaser.Math.Between(0, symbolSet.length - 1);
-        return symbolSet[randomIndex];
+    getRandomSymbolKey(): string {
+        const randomIndex = Phaser.Math.Between(0, this.symbolKeys.length - 1);        
+        return this.symbolKeys[randomIndex];
     }
 
     moveReel() {    
@@ -153,10 +145,12 @@ export class Slots extends Phaser.GameObjects.Container {
         }
         const reel = this.reelContainers[reelIndex];
         const spinDistance = this.spacingY * 4; // Adjust this value for desired spin amount 
+
+        let spinDirection = ResultData.gameData.hasReSpin ? '-=' : '+=';
         // reel.y -= 1;
         this.reelTweens[reelIndex] = this.scene.tweens.add({
             targets: reel,
-            y: `+=${spinDistance}`, // Spin relative to current position
+            y: `${spinDirection}${spinDistance}`, // Spin relative to current position
             duration: 300, 
             repeat: -1, 
             onComplete: () => {},
@@ -188,9 +182,9 @@ export class Slots extends Phaser.GameObjects.Container {
         this.scene.tweens.add({
             targets: reel,
             y: targetY, // Animate relative to the current position
-            duration: 500,
-            // ease: 'Elastic.easeOut',
-            ease: 'Cubic.easeOut',
+            duration: 700,
+            ease: 'Elastic.easeOut',
+            // ease: 'Cubic.easeOut',
             onComplete: () => {
                 if (this.reelTweens[reelIndex]) {
                     this.reelTweens[reelIndex].stop(); 
@@ -260,7 +254,7 @@ class Symbols {
         this.isMobile = scene.sys.game.device.os.android || scene.sys.game.device.os.iOS;
         // Load textures and create animation
         const textures: string[] = [];
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 3; i++) {
             textures.push(`${symbolKey}`);
         }  
         // console.log(textures, "textures");
@@ -275,7 +269,11 @@ class Symbols {
 
     // to update the slotx_0 to show the 0 index image at the end
     updateKeyToZero(symbolKey: string): string {
-        const match = symbolKey.match(/^$`{this.Color}slots`(\d+)_\d+$/);
+       console.log( `${this.Color} check,`, symbolKey)
+        // const match = symbolKey.match(/^`${this.Color}slots`(\d+)_\d+$/);
+        const match = symbolKey.match(/^slots(\d+)_\d+$/);
+        console.log("match", match);
+        
         if (match) {
             const xValue = match[1];
             return `${this.Color}slots${xValue}_0`;
@@ -283,6 +281,7 @@ class Symbols {
             return symbolKey; // Return the original key if format is incorrect
         }
     }
+    // to update the slotx_0 to show the 0 index image at the end
     playAnimation(animationId: any) {
        this.symbol.play(animationId)
     }
@@ -296,11 +295,11 @@ class Symbols {
         console.log(currentGameData.currentBetIndex);
         let mynumber = currentGameData.currentBetIndex + 1
        
-        if (this.index.x < 1) {
+        if (this.index.y < 1) {
             let textureKeys: string[] = [];
             // Retrieve the elementId based on index
-            const elementId = ResultData.gameData.resultSymbols[this.index.x];
-                for (let i = 0; i < 9; i++) {
+            const elementId = ResultData.gameData.resultSymbols[this.index.y][this.index.x];
+                for (let i = 0; i < 36; i++) {
                     const textureKey = `${this.Color}slots${elementId}_${i}`;
                     // Check if the texture exists in cache
                     if (this.scene.textures.exists(textureKey)) {

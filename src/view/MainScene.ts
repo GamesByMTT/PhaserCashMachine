@@ -34,6 +34,8 @@ export default class MainScene extends Scene {
     uiPopups!: UiPopups;    
     lineSymbols!: LineSymbols;
     private mainContainer!: Phaser.GameObjects.Container;
+    private betIndexImages: Phaser.GameObjects.Image[] = [];
+    private hideReelsTimer: Phaser.Time.TimerEvent | null = null;
     private Color: "red" | "green" = "green"
     constructor() {
         super({ key: 'MainScene' });
@@ -52,15 +54,13 @@ export default class MainScene extends Scene {
             .setDisplaySize(1920, 1080);
         this.greenLeftBorder = this.add.sprite(width * 0.07, height/2.3, `${this.Color}LeftBorder`).setScale(0.6)
         this.greenRightBorder = this.add.sprite(width * 0.93, height/2.3, `${this.Color}RightBorder`).setScale(0.6)
-        this.greenFirstCircle = this.add.sprite(width * 0.25, height/1.9, `${this.Color}Circle`).setScale(0.7);
-        this.greenSecondCircle = this.add.sprite(width * 0.75, height/1.9, `${this.Color}Circle`).setScale(0.7);
+       
         this.greenHead = this.add.sprite(width/2, height / 5.3, `${this.Color}Head`).setScale(0.9); 
         this.greenLogo = this.add.sprite(width/2, height/6.2, `${this.Color}Logo`).setScale(0.8);
         this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar");
-        this.greencenterFrame = this.add.sprite(width/2, height/1.8, `${this.Color}CentreFrame`).setScale(0.48)
         this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3 );
         this.slotBg = this.add.sprite(width/2, height/1.8, "slotBg")
-        this.mainContainer.add([this.gameBg, this.greenLeftBorder, this.slotBg, this.greenRightBorder, this.greenFirstCircle, this.greenSecondCircle, this.greenHead, this.greenLogo, this.whatUSeeText, this.greencenterFrame, this.taskbar]);
+        this.mainContainer.add([this.gameBg, this.greenLeftBorder, this.slotBg, this.greenRightBorder, this.greenHead, this.greenLogo, this.whatUSeeText, this.taskbar]);
         this.soundManager.playSound("backgroundMusic");
 
         this.uiContainer = new UiContainer(this, () => this.onSpinCallBack(), this.soundManager);
@@ -72,6 +72,7 @@ export default class MainScene extends Scene {
 
         this.uiPopups = new UiPopups(this, this.uiContainer, this.soundManager);
         this.mainContainer.add(this.uiPopups);
+        this.hideReels();
 
         // this.lineSymbols = new LineSymbols(this, 10, 12, this.lineGenerator);
         // this.mainContainer.add(this.lineSymbols);
@@ -92,6 +93,32 @@ export default class MainScene extends Scene {
         // this.lineGenerator.hideLines();
     }
 
+    hideReels() {
+        const { width, height } = this.cameras.main;
+        if (this.hideReelsTimer) {
+            this.hideReelsTimer.remove(); // Cancel any pending timer
+        }
+       
+        this.hideReelsTimer = this.time.delayedCall(50, () => { // 50ms delay
+            this.hideReelsTimer = null; // Reset the timer
+            // Now perform the image updates
+            this.betIndexImages.forEach(img => img.destroy());
+            this.betIndexImages = [];
+            if (currentGameData.currentBetIndex === 0) {
+                const centerOverlay = this.add.image(width / 2, height / 1.8, "centerOverLay").setDepth(10);
+                const rightOverlay = this.add.image(width * 0.75, height / 1.8, "rightOverLay").setDepth(10);
+                this.betIndexImages.push(centerOverlay, rightOverlay); // Add to array for tracking
+            } else if (currentGameData.currentBetIndex === 1) {
+                // ... (add image for index 1)
+                const rightOverlay = this.add.image(width * 0.75, height / 1.8, "rightOverLay");
+                this.betIndexImages.push(rightOverlay); // Add to array for tracking
+            }
+            this.greenFirstCircle = this.add.sprite(width * 0.25, height/1.9, `${this.Color}Circle`).setScale(0.7);
+            this.greenSecondCircle = this.add.sprite(width * 0.75, height/1.9, `${this.Color}Circle`).setScale(0.7);
+            this.greencenterFrame = this.add.sprite(width/2, height/1.8, `${this.Color}CentreFrame`).setScale(0.48)
+        })
+    }
+
     recievedMessage(msgType: string, msgParams: any) {
         if (msgType === 'ResultData') {
             if(ResultData.gameData.hasReSpin){
@@ -109,6 +136,9 @@ export default class MainScene extends Scene {
                 this.slot.stopTween();
             }, 1000);
         } 
+        if(msgType === "betChange"){
+            this.hideReels();
+        }
     }
 
     // Handle ResultData logic separately
@@ -154,10 +184,6 @@ export default class MainScene extends Scene {
             ease: 'Sine.easeInOut',
             delay: 250 
         });
-
-        // Create coin flip animation once
-
-       
 
         const winSprite = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY - 50, spriteKey)
             .setScale(0.8)

@@ -83,7 +83,7 @@ export const initData = {
 };
 
 export const currentGameData = {
-  currentBetIndex: 0,
+  currentBetIndex: 2,
   won: 0,
   AutoPlay: 0,
   currentLines: 0,
@@ -98,7 +98,6 @@ export const ResultData = {
     BonusResult: [],
     BonusStopIndex: -1,
     resultSymbols: [[]],
-    ResultReel: [[]],
     WinAmout: 0,
     freeSpins: {
       count: 0,

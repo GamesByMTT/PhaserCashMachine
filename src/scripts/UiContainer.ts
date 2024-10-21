@@ -52,8 +52,9 @@ export class UiContainer extends Phaser.GameObjects.Container {
                     currentGameData.currentBetIndex = 0;
                 }
                 const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
-                const updatedBetAmount = betAmount * 20;
+                Globals.emitter?.Call("betChange");
                 this.CurrentLineText.updateLabelText(betAmount);
+               
                 // this.CurrentBetText.updateLabelText(updatedBetAmount.toString());
             }
             this.scene.time.delayedCall(200, () => {
