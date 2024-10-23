@@ -299,7 +299,7 @@ export class UiPopups extends Phaser.GameObjects.Container {
         const popupContainer = this.scene.add.container(
             this.scene.scale.width / 2,
             this.scene.scale.height / 2
-        ).setDepth(1); // Set depth higher than blurGraphic
+        ).setDepth(8); // Set depth higher than blurGraphic
     
         // Popup background image
         const popupBg = this.scene.add.image(0, 0, 'messagePopup').setDepth(10);

@@ -21,16 +21,20 @@ export class Slots extends Phaser.GameObjects.Container {
     private symbolHeight: number;
     private spacingX: number;
     private spacingY: number;
+    leftCircleWinning!: Phaser.GameObjects.Sprite;
+    rightCircleWinning!: Phaser.GameObjects.Sprite;
+    centerWining!: Phaser.GameObjects.Sprite;
     private reelContainers: Phaser.GameObjects.Container[] = [];
     private connectionTimeout!: Phaser.Time.TimerEvent;
     private reelTweens: Phaser.Tweens.Tween[] = []; // Array for reel tweens
     private totalVisibleSymbols: number = 3; // Number of visible symbols on the reel
-     private Color: "red" | "green" = "green"
+    private Color: "red" | "green" = "green"
     constructor(scene: Phaser.Scene, uiContainer: UiContainer, callback: () => void, SoundManager : SoundManager) {
         super(scene);
         this.resultCallBack = callback;
         this.uiContainer = uiContainer;
         this.SoundManager = SoundManager
+        this.createWinningSprites();
         this.slotMask = new Phaser.GameObjects.Graphics(scene);
         
         this.maskWidth = gameConfig.scale.width;
@@ -51,7 +55,7 @@ export class Slots extends Phaser.GameObjects.Container {
         this.symbolWidth = exampleSymbol.displayWidth/ 3;
         this.symbolHeight = exampleSymbol.displayHeight/3;
         this.spacingX = this.symbolWidth * 3.25; // Add some spacing
-        this.spacingY = this.symbolHeight * 3; // Add some spacing
+        this.spacingY = this.symbolHeight * 2.5; // Add some spacing
         // console.log(this.symbolHeight, "symbolHeightsymbolHeightsymbolHeight");
         const startPos = {
             x: gameConfig.scale.width /4.1,
@@ -61,7 +65,7 @@ export class Slots extends Phaser.GameObjects.Container {
         const visibleSymbol = 1;
         const startIndex = 1;
         const initialYOffset = (totalSymbol - startIndex - visibleSymbol) * this.spacingY;
-        const totalSymbolsPerReel = 3; 
+        const totalSymbolsPerReel = 36; 
         for (let i = 0; i < 3; i++) { 
             const reelContainer = new Phaser.GameObjects.Container(this.scene);
             this.reelContainers.push(reelContainer); // Store the container for future use
@@ -76,7 +80,7 @@ export class Slots extends Phaser.GameObjects.Container {
                     startPos.x + i * this.spacingX,
                     startPos.y + j * this.spacingY 
                 );
-                slot.symbol.setScale(0.6, 0.6)
+                slot.symbol.setScale(0.6, 0.6).setDepth(2)
                 slot.startX = slot.symbol.x;
                 slot.startY = slot.symbol.y;
                 this.slotSymbols[i].push(slot);
@@ -86,9 +90,18 @@ export class Slots extends Phaser.GameObjects.Container {
             reelContainer.setPosition(reelContainer.x, -initialYOffset);
             this.add(reelContainer); 
         }
+       
     }
     
-
+    private createWinningSprites() {
+        const { width, height } = this.scene.cameras.main;
+        this.leftCircleWinning = this.scene.add.sprite(width * 0.25, height/1.8, `${this.Color}CircleWinning`).setDepth(1).setVisible(false);
+        this.centerWining = this.scene.add.sprite(width / 2, height / 1.8, `${this.Color}CenterWinning`).setDepth(1).setVisible(false);
+        this.rightCircleWinning = this.scene.add.sprite(width * 0.75, height / 1.8, `${this.Color}CircleWinning`).setDepth(1).setVisible(false);
+        this.add(this.leftCircleWinning);
+        this.add(this.centerWining);
+        this.add(this.rightCircleWinning);
+    }
     getFilteredSymbolKeys(): string[] {
         // Filter symbols based on the pattern
         const allSprites = Globals.resources;
@@ -105,30 +118,49 @@ export class Slots extends Phaser.GameObjects.Container {
         return this.symbolKeys[randomIndex];
     }
 
-    moveReel() {    
-        const initialYOffset = (this.slotSymbols[0][0].totalSymbol - this.slotSymbols[0][0].visibleSymbol - this.slotSymbols[0][0].startIndex) * this.slotSymbols[0][0].spacingY;
-        setTimeout(() => {
-            for (let i = 0; i < this.reelContainers.length; i++) {
-                this.reelContainers[i].setPosition(
-                    this.reelContainers[i].x,
-                    -initialYOffset // Set the reel's position back to the calculated start position
-                );
-            }    
-        }, 100);
+    moveReel() {   
+        this.leftCircleWinning.setVisible(false); 
+        this.centerWining.setVisible(false);
+        this.rightCircleWinning.setVisible(false);
+        if(!ResultData.gameData.isReSpinRunning){
+            const initialYOffset = (this.slotSymbols[0][0].totalSymbol - this.slotSymbols[0][0].visibleSymbol - this.slotSymbols[0][0].startIndex) * this.slotSymbols[0][0].spacingY;
+            setTimeout(() => {
+                    for (let i = 0; i < this.reelContainers.length; i++) {
+                        this.reelContainers[i].setPosition(
+                            this.reelContainers[i].x,
+                            -initialYOffset // Set the reel's position back to the calculated start position
+                        );
+                    }    
+            }, 100);
+        }
         for (let i = 0; i < this.reelContainers.length; i++) {
             for (let j = 0; j < this.reelContainers[i].list.length; j++) {
                 setTimeout(() => {
                     this.slotSymbols[i][j].startMoving = true;
-                    if (j < 3) this.slotSymbols[i][j].stopAnimation();
+                    if (j < 20) this.slotSymbols[i][j].stopAnimation();
                 }, 100 * i);
             }
         }
         this.moveSlots = true;
-        setTimeout(() => {
-            for (let i = 0; i < this.reelContainers.length; i++) {
-                this.startReelSpin(i);
+        if(!ResultData.gameData.hasReSpin){
+            setTimeout(() => {
+                for (let i = 0; i < this.reelContainers.length; i++) {
+                    this.startReelSpin(i);
+                }
+            }, 100);
+        }else{
+            for (let y = 1; y < ResultData.gameData.resultSymbols.length; y++) {
+                const row = ResultData.gameData.resultSymbols[y];
+                for (let x = 0; x < row.length; x++) {
+                    const elementId = row[x];
+                    if (elementId == '0') { 
+                        console.log(x, "wwhich column");
+                        
+                        this.startReelSpin(x);
+                    }
+                }
             }
-        }, 100);
+        }
 
         //Setting the Timer for response wait
         this.connectionTimeout = this.scene.time.addEvent({
@@ -144,6 +176,7 @@ export class Slots extends Phaser.GameObjects.Container {
             this.reelTweens[reelIndex].stop(); 
         }
         const reel = this.reelContainers[reelIndex];
+        
         const spinDistance = this.spacingY * 4; // Adjust this value for desired spin amount 
 
         let spinDirection = ResultData.gameData.hasReSpin ? '-=' : '+=';
@@ -183,7 +216,7 @@ export class Slots extends Phaser.GameObjects.Container {
             targets: reel,
             y: targetY, // Animate relative to the current position
             duration: 700,
-            ease: 'Elastic.easeOut',
+            ease: 'Bounce.easeOut',
             // ease: 'Cubic.easeOut',
             onComplete: () => {
                 if (this.reelTweens[reelIndex]) {
@@ -207,19 +240,83 @@ export class Slots extends Phaser.GameObjects.Container {
 
     // Function to play win animations
     playWinAnimations() {
+        const { width, height } = this.scene.cameras.main;
         this.resultCallBack(); // Call the result callback
-        // ResultData.gameData.symbolsToEmit.forEach((rowArray: any) => {
-        //     rowArray.forEach((row: any) => {
-        //         if (typeof row === "string") {
-        //             const [y, x]: number[] = row.split(",").map((value) => parseInt(value));
-        //             const animationId = `symbol_anim_${ResultData.gameData.resultSymbols[x][y]}`;
-        //             if (this.slotSymbols[y] && this.slotSymbols[y][x]) {
-        //                 this.winMusic("winMusic");
-        //                 this.slotSymbols[y][x].playAnimation(animationId);
-        //             }
-        //         }
-        //     });
-        // });
+        if(ResultData.gameData.isReSpinRunning){
+            const row = ResultData.gameData.resultSymbols[ResultData.gameData.countReSpin - 1];
+            for (let x = 0; x < row.length; x++) {
+                const elementId = row[x];
+                if (elementId !== '0') {
+                    if (this.slotSymbols[0] && this.slotSymbols[0][x]) {
+                        this.playSymbolAnimation(x, 0, elementId);
+                        if(x == 0){
+                            this.leftCircleWinning.setVisible(true);
+                        } else if(x == 1){
+                            this.centerWining.setVisible(true);
+                        } else if(x == 2){
+                            this.rightCircleWinning.setVisible(true);
+                        }
+                    }
+                    // Play win sound for each non-zero symbol
+                    this.winMusic("winMusic");
+                } else {
+                    // console.log(`Skipping animation for symbol at (${y}, ${x})`);
+                }
+            }
+        }else{
+                let y = 0;
+                const row = ResultData.gameData.resultSymbols[y];
+                for (let x = 0; x < row.length; x++) {
+                    const elementId = row[x];
+                    if (elementId !== '0') {
+                        if (this.slotSymbols[y] && this.slotSymbols[y][x]) {
+                            this.playSymbolAnimation(x, y, elementId);
+                            console.log(x, "column");
+                            if(x == 0){
+                                this.leftCircleWinning.setVisible(true);
+                            } else if(x == 1){
+                                this.centerWining.setVisible(true);
+                            } else if(x == 2){
+                                this.rightCircleWinning.setVisible(true);
+                            }
+                        }
+                        // Play win sound for each non-zero symbol
+                        this.winMusic("winMusic");
+                    } else {
+                        // console.log(`Skipping animation for symbol at (${y}, ${x})`);
+                    }
+                }
+            
+        }
+        
+    }
+
+    playSymbolAnimation(y: number, x: number, elementId: string) {
+        const symbol = this.slotSymbols[y][x];
+        const animationId = `symbol_anim_${elementId}`;
+
+        if (!this.scene.anims.exists(animationId)) {
+            let textureKeys: string[] = [];
+            for (let i = 0; i < 36; i++) {
+                const textureKey = `${this.Color}slots${elementId}_${i}`;
+                if (this.scene.textures.exists(textureKey)) {
+                    textureKeys.push(textureKey);
+                }
+            }
+            if (textureKeys.length > 0) {
+                this.scene.anims.create({
+                    key: animationId,
+                    frames: textureKeys.map(key => ({ key })),
+                    frameRate: 20,
+                    repeat: -1
+                });
+            }
+        }
+
+        if (this.scene.anims.exists(animationId)) {
+            symbol.playAnimation(animationId);
+        } else {
+        }
     }
     winMusic(key: string){
         this.SoundManager.playSound(key)
@@ -241,7 +338,6 @@ class Symbols {
     scene: Phaser.Scene;
     private isMobile: boolean;
     reelContainer: Phaser.GameObjects.Container
-    private bouncingTween: Phaser.Tweens.Tween | null = null;
     winningSprite: Phaser.GameObjects.Sprite | null = null; 
     private Color: "red" | "green" = "green"
     constructor(scene: Phaser.Scene, symbolKey: string, index: { x: number; y: number }, reelContainer: Phaser.GameObjects.Container) {
@@ -254,11 +350,9 @@ class Symbols {
         this.isMobile = scene.sys.game.device.os.android || scene.sys.game.device.os.iOS;
         // Load textures and create animation
         const textures: string[] = [];
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 20; i++) {
             textures.push(`${symbolKey}`);
         }  
-        // console.log(textures, "textures");
-              
         this.scene.anims.create({
             key: `${symbolKey}`,
             frames: textures.map((texture) => ({ key: texture })),
@@ -269,21 +363,19 @@ class Symbols {
 
     // to update the slotx_0 to show the 0 index image at the end
     updateKeyToZero(symbolKey: string): string {
-       console.log( `${this.Color} check,`, symbolKey)
-        // const match = symbolKey.match(/^`${this.Color}slots`(\d+)_\d+$/);
-        const match = symbolKey.match(/^slots(\d+)_\d+$/);
-        console.log("match", match);
         
+        const match = symbolKey.match(/^slots(\d+)_\d+$/);
         if (match) {
             const xValue = match[1];
             return `${this.Color}slots${xValue}_0`;
-        } else {
+        } else {            
             return symbolKey; // Return the original key if format is incorrect
         }
     }
-    // to update the slotx_0 to show the 0 index image at the end
+    // to update the slotx_0 to show the 0 index image at the en
+
     playAnimation(animationId: any) {
-       this.symbol.play(animationId)
+        this.symbol.play(animationId);
     }
     stopAnimation() {
         // console.log(this.symbol.anims.isPlaying);
@@ -292,13 +384,16 @@ class Symbols {
         } 
     }
     endTween() {
-        console.log(currentGameData.currentBetIndex);
         let mynumber = currentGameData.currentBetIndex + 1
-       
         if (this.index.y < 1) {
             let textureKeys: string[] = [];
             // Retrieve the elementId based on index
-            const elementId = ResultData.gameData.resultSymbols[this.index.y][this.index.x];
+            let elementId
+            if(ResultData.gameData.isReSpinRunning && ResultData.gameData.countReSpin > 0){
+                elementId = ResultData.gameData.resultSymbols[ResultData.gameData.countReSpin][this.index.x];
+            }else{
+                elementId = ResultData.gameData.resultSymbols[this.index.y][this.index.x];
+            }
                 for (let i = 0; i < 36; i++) {
                     const textureKey = `${this.Color}slots${elementId}_${i}`;
                     // Check if the texture exists in cache

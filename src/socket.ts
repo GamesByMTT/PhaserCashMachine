@@ -62,10 +62,14 @@ export class SocketManager {
           }
         }
         if(data.id == "ResultData"){
-              ResultData.gameData = data.message.gameData;
-              ResultData.playerData = data.message.PlayerData;
-              Globals.emitter?.Call("ResultData");
-              console.log(data, "data");
+              console.log(data.message, "data");
+              setTimeout(() => {
+                ResultData.gameData = data.message.gameData;
+                ResultData.playerData = data.message.PlayerData;
+                Globals.emitter?.Call("ResultData");
+              }, 1000);
+             
+             
         }
       });
     });

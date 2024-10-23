@@ -36,6 +36,7 @@ export default class MainScene extends Scene {
     private mainContainer!: Phaser.GameObjects.Container;
     private betIndexImages: Phaser.GameObjects.Image[] = [];
     private hideReelsTimer: Phaser.Time.TimerEvent | null = null;
+    private respinSprite: Phaser.GameObjects.Sprite | null = null;
     private Color: "red" | "green" = "green"
     constructor() {
         super({ key: 'MainScene' });
@@ -43,7 +44,6 @@ export default class MainScene extends Scene {
 
     create() {
         const { width, height } = this.cameras.main;
-
         // Container for better organization and potential performance
         this.mainContainer = this.add.container();
         this.soundManager = new SoundManager(this);
@@ -90,6 +90,9 @@ export default class MainScene extends Scene {
     private onSpinCallBack() {
         this.soundManager.playSound("onSpin");
         this.slot.moveReel();
+        if(ResultData.gameData.isReSpinRunning){
+            this.slot.stopTween()
+        }
         // this.lineGenerator.hideLines();
     }
 
@@ -105,40 +108,94 @@ export default class MainScene extends Scene {
             this.betIndexImages.forEach(img => img.destroy());
             this.betIndexImages = [];
             if (currentGameData.currentBetIndex === 0) {
-                const centerOverlay = this.add.image(width / 2, height / 1.8, "centerOverLay").setDepth(10);
-                const rightOverlay = this.add.image(width * 0.75, height / 1.8, "rightOverLay").setDepth(10);
+                const centerOverlay = this.add.image(width / 2, height / 1.8, "centerOverLay");
+                const rightOverlay = this.add.image(width * 0.75, height / 1.8, "rightOverLay");
                 this.betIndexImages.push(centerOverlay, rightOverlay); // Add to array for tracking
             } else if (currentGameData.currentBetIndex === 1) {
                 // ... (add image for index 1)
                 const rightOverlay = this.add.image(width * 0.75, height / 1.8, "rightOverLay");
                 this.betIndexImages.push(rightOverlay); // Add to array for tracking
             }
-            this.greenFirstCircle = this.add.sprite(width * 0.25, height/1.9, `${this.Color}Circle`).setScale(0.7);
-            this.greenSecondCircle = this.add.sprite(width * 0.75, height/1.9, `${this.Color}Circle`).setScale(0.7);
-            this.greencenterFrame = this.add.sprite(width/2, height/1.8, `${this.Color}CentreFrame`).setScale(0.48)
+            this.greenFirstCircle = this.add.sprite(width * 0.25, height/1.9, `${this.Color}Circle`).setScale(0.7).setDepth(5);
+            this.greenSecondCircle = this.add.sprite(width * 0.75, height/1.9, `${this.Color}Circle`).setScale(0.7).setDepth(5);
+            this.greencenterFrame = this.add.sprite(width/2, height/1.8, `${this.Color}CentreFrame`).setScale(0.48).setDepth(5);
         })
     }
 
     recievedMessage(msgType: string, msgParams: any) {
         if (msgType === 'ResultData') {
-            if(ResultData.gameData.hasReSpin){
-
-            }else{
-
-            }
-            // Use setTimeout for better performance in this case
             setTimeout(() => {
                 this.handleResultData();
-            }, 3000); 
-
+            }, 2000); 
             // Stop tween after a delay for visual effect
             setTimeout(() => {
                 this.slot.stopTween();
             }, 1000);
+            if(ResultData.gameData.hasReSpin){
+                
+                this.time.delayedCall(2000, () => {
+                    if(this.greenLogo){
+                        this.greenLogo.destroy()
+                    }
+                    this.playRespinAnimation();
+                }, [], this);
+                
+                const totalNumberOfRespin = ResultData.gameData.resultSymbols.length - 1
+                for(let i = 0; i<totalNumberOfRespin; i++){
+                    setTimeout(() => {
+                        ResultData.gameData.countReSpin += 1;
+                        ResultData.gameData.isReSpinRunning = true;
+                        this.onSpinCallBack()
+                        if (i === totalNumberOfRespin - 1) {
+                            // Set hasReSpin to false after a short delay
+                            setTimeout(() => {
+                                ResultData.gameData.hasReSpin = false;
+                                ResultData.gameData.isReSpinRunning = false;
+                                ResultData.gameData.countReSpin = 0;
+                                if(this.respinSprite){
+                                    this.respinSprite.stop();
+                                    this.respinSprite.destroy();
+                                    this.respinSprite = null;
+                                    this.greenLogo = this.add.sprite(this.cameras.main.width/2, this.cameras.main.height/6.2, `${this.Color}Logo`).setScale(0.8);
+                                }
+                            }, 1000); // Short delay to ensure it runs after the last respin
+                        }
+                    }, 6000* (i + 1));
+                }
+            }else{
+                if(this.greenLogo){
+
+                }else{
+                    this.greenLogo = this.add.sprite(this.cameras.main.width/2, this.cameras.main.height/6.2, `${this.Color}Logo`).setScale(0.8);
+                }
+                if(ResultData.gameData.isReSpinRunning || ResultData.gameData.countReSpin > 0){
+                    ResultData.gameData.isReSpinRunning = false;
+                    ResultData.gameData.countReSpin = 0;
+                    ResultData.gameData.hasReSpin = false
+                }
+            }
         } 
         if(msgType === "betChange"){
             this.hideReels();
         }
+    }
+    playRespinAnimation() {
+        const respinFrames: Phaser.Types.Animations.AnimationFrame[] = [];
+        for (let i = 0; i < 60; i++) {
+            respinFrames.push({ key: `${this.Color}respin${i}` });
+        }
+        this.anims.create({
+            key: 'respinAnimation',
+            frames: respinFrames,
+            frameRate: 24, // Adjust as needed
+            repeat: -1 // Play only once
+        });
+        this.respinSprite = this.add.sprite(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 6.3,
+            `${this.Color}respin0` // Initial frame
+        ).setDepth(15); // Ensure it's on top
+        this.respinSprite.play('respinAnimation');
     }
 
     // Handle ResultData logic separately
