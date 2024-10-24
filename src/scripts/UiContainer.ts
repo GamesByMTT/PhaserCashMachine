@@ -15,10 +15,20 @@ export class UiContainer extends Phaser.GameObjects.Container {
     WiningText!: Phaser.GameObjects.Text;
     currentBalanceText!: TextLabel;
     CurrentLineText!: TextLabel;
+    betoptionBtn!: InteractiveBtn
     pBtn!: Phaser.GameObjects.Sprite;
+    arrowOpener!: Phaser.GameObjects.Sprite;
     fadeDoubbleButton!: Phaser.GameObjects.Sprite;
+    autoBetBg!: Phaser.GameObjects.Sprite
+    betContainer!: Phaser.GameObjects.Container;
+    zeroBetButton!: InteractiveBtn;
+    tenBetButton!: InteractiveBtn;
+    twentyFiveBetButton!: InteractiveBtn;
+    fiftBetButton!: InteractiveBtn;
+    hundredBetButton!: InteractiveBtn;
     public isAutoSpinning: boolean = false; // Flag to track if auto-spin is active
-    betButtonDisable!: Phaser.GameObjects.Container
+    betButtonDisable!: Phaser.GameObjects.Container;
+    isOpen: boolean = false;
     private winTween: Phaser.Tweens.Tween | null = null; // Store the win tween
 
     constructor(scene: Scene, spinCallBack: () => void, soundManager: SoundManager) {
@@ -26,12 +36,18 @@ export class UiContainer extends Phaser.GameObjects.Container {
         scene.add.existing(this); 
         // Initialize UI elements
         // this.maxBetInit();
-        this.spinBtnInit(spinCallBack);
+        // this.spinBtnInit(spinCallBack);
         // this.autoSpinBtnInit(spinCallBack);
         this.lineBtnInit();
         this.winBtnInit();
         this.balanceBtnInit();
-        // this.BetBtnInit();
+        this.littleArrow();
+        this.BetBtnInit();
+        this.zerofun();
+        this.tenFun()
+        this.twentyfiveFun();
+        this.fiftyFun();
+        this.hundredBetFun();
         this.SoundManager = soundManager;
     }
 
@@ -40,7 +56,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
      */
     lineBtnInit() { 
         const container = this.scene.add.container(gameConfig.scale.width / 1.75, gameConfig.scale.height / 1.075);
-    
         // container.add(lineText);
         this.pBtn = this.createButton('pBtn', 0, 0, () => {
             this.bnuttonMusic("buttonpressed");
@@ -54,19 +69,211 @@ export class UiContainer extends Phaser.GameObjects.Container {
                 const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
                 Globals.emitter?.Call("betChange");
                 this.CurrentLineText.updateLabelText(betAmount);
-               
                 // this.CurrentBetText.updateLabelText(updatedBetAmount.toString());
             }
             this.scene.time.delayedCall(200, () => {
                 this.pBtn.setTexture('pBtn');
                 this.pBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
             });
-        }).setDepth(8).setScale(0.2);
+        }).setScale(0.2);
         container.add(this.pBtn);
         const betHeading = this.scene.add.text(-85, -30, "BET", {color: "#ffffff", align: "center", fontSize: "25px"}).setOrigin(0.5)
         this.CurrentLineText = new TextLabel(this.scene, -85, 10, initData.gameData.Bets[currentGameData.currentBetIndex], 40, "#ff0000").setOrigin(0.5);
         //Line Count
         container.add([betHeading, this.CurrentLineText ]).setDepth(1)
+    }
+
+    littleArrow(){
+        const menuBtnTextures = [
+            this.scene.textures.get('smallPlayBg'),
+            this.scene.textures.get('smallPlayBgHover')
+        ];
+        this.betoptionBtn = new InteractiveBtn(this.scene, menuBtnTextures, () => {
+            // this.buttonMusic("buttonpressed")
+            this.openbetOptions()
+
+        }, 0, true);
+        this.betoptionBtn.setPosition(gameConfig.scale.width * 0.832, gameConfig.scale.height / 1.15 ).setScale(0.75);
+        this.betoptionBtn.setDepth(2);
+        this.add(this.betoptionBtn);
+    }
+    zerofun(){
+        const zeroBtn = [
+            this.scene.textures.get("zeroBetBtn"),
+            this.scene.textures.get("zeroHoverBetBtn")
+        ]
+        this.zeroBetButton = new InteractiveBtn(this.scene, zeroBtn, () =>{
+            this.openbetOptions()
+        }, 1, false).setScale(0.4).setDepth(10);
+        this.add(this.zeroBetButton)
+    }
+
+    tenFun(){
+        const tenBtn = [
+            this.scene.textures.get("tenBetBtn"),
+            this.scene.textures.get("tenHoverBetBtn")
+        ]
+        this.tenBetButton = new InteractiveBtn(this.scene, tenBtn, () =>{
+            this.openbetOptions
+        }, 2, false).setScale(0.4).setDepth(10)
+        this.add(this.tenBetButton)
+    }
+
+    twentyfiveFun(){
+        const twentyFiveBtn = [
+            this.scene.textures.get("TwentyFiveBetBtn"),
+            this.scene.textures.get("TwentyFiveHoverBetBtn")
+        ]
+        this.twentyFiveBetButton = new InteractiveBtn(this.scene, twentyFiveBtn, () =>{
+            this.openbetOptions()
+        }, 3, false).setScale(0.4).setDepth(10);
+        this.add(this.twentyFiveBetButton)
+    }
+
+    fiftyFun(){
+        const fiftyBtn =[
+            this.scene.textures.get("FiftyBetBtn"),
+            this.scene.textures.get("FiftyHoverBetBtn")
+         ]
+         this.fiftBetButton = new InteractiveBtn(this.scene, fiftyBtn, ()=>{
+             this.openbetOptions()
+         }, 4, false).setScale(0.4).setDepth(10)
+         this.add(this.fiftBetButton)
+    }
+
+    hundredBetFun(){
+        const hundredBtn = [
+            this.scene.textures.get("HundredBetBtn"),
+            this.scene.textures.get("HundredHoverBetBtn"),
+        ]
+        this.hundredBetButton = new InteractiveBtn(this.scene, hundredBtn, ()=>{
+            this.openbetOptions()
+        }, 5, false).setScale(0.4).setDepth(10);
+        this.add(this.hundredBetButton);
+    }
+
+    BetBtnInit(){
+        this.autoBetBg =  this.scene.add.sprite(gameConfig.scale.width* 0.67, gameConfig.scale.height/1.19, "bgAutoSpin").setScale(0.45)
+        .setDepth(5);
+        this.autoBetBg.setVisible(false)
+    }
+    openbetOptions(){
+        this.isOpen = !this.isOpen;
+        if (this.isOpen) {
+            this.tweenToPosition(this.zeroBetButton, 5);
+            this.tweenToPosition(this.tenBetButton, 4);
+            this.tweenToPosition(this.twentyFiveBetButton, 3);
+            this.tweenToPosition(this.fiftBetButton, 2);
+            this.tweenToPosition(this.hundredBetButton, 1);
+        } else {
+            this.tweenBack(this.zeroBetButton);
+            this.tweenBack(this.tenBetButton);
+            this.tweenBack(this.twentyFiveBetButton);
+            this.tweenBack(this.fiftBetButton);
+            this.tweenBack(this.hundredBetButton);
+        }
+    }
+
+    tweenToPosition(button: InteractiveBtn, index: number) {
+        this.autoBetBg.setVisible(true)
+        const targetX =  (this.betoptionBtn.y * 1.7) - (index  * (this.betoptionBtn.height/1.1))
+        // Calculate the x position with spacing
+        button.setPosition(this.betoptionBtn.x, this.betoptionBtn.y)
+         button.setVisible(true);
+
+         this.scene.tweens.add({
+            targets: this.autoBetBg,
+            x: gameConfig.scale.width * 0.67,  // Adjust these values as needed
+            duration: 600,
+            ease: 'Elastic',
+            easeParams: [1, 0.9]
+        });
+    
+         this.scene.tweens.add({
+             targets: button,
+             x: targetX,
+             duration: 600,
+             ease: 'Elastic',
+             easeParams: [1, 0.9],
+             onComplete: () => {
+                 button.setInteractive(true);
+                 this.betoptionBtn.setInteractive(true);
+             }
+         });
+     }
+    // tweenToPosition(button: InteractiveBtn, index: number){
+    //     const targetX = this.betoptionBtn.x - (this.betoptionBtn.width/2 );
+    //     const baseY = this.betoptionBtn.y;
+    //     const spacing = 60; // Adjust this value to control vertical spacing between buttons
+    //     this.zeroBetButton.setVisible(true).setPosition(targetX, baseY - (spacing * 4));
+    //     this.tenBetButton.setVisible(true).setPosition(targetX, baseY - (spacing * 3));
+    //     this.twentyFiveBetButton.setVisible(true).setPosition(targetX, baseY - (spacing * 2));
+    //     this.fiftBetButton.setVisible(true).setPosition(targetX, baseY - spacing);
+    //     this.hundredBetButton.setVisible(true).setPosition(targetX, baseY);
+    //     this.betContainer.setVisible(true);
+    //     // Set container position
+    //     this.betContainer.setPosition(this.betoptionBtn.x, this.betoptionBtn.y);
+    
+    //     // Debug logs to check positions
+    //     console.log('Target X:', targetX);
+    //     console.log('Base Y:', baseY);
+    //     console.log('Container Position:', this.betContainer.x, this.betContainer.y);
+    //     console.log('Zero Button Position:', this.zeroBetButton.x, this.zeroBetButton.y);
+    
+
+    //     this.scene.tweens.add({
+    //         targets: this.betContainer,
+    //         x: targetX,
+    //         duration: 600,
+    //         ease: 'Elastic',
+    //         easeParams: [1, 0.9],
+    //         onComplete: () => {
+    //             [
+    //                 this.zeroBetButton,
+    //                 this.tenBetButton,
+    //                 this.twentyFiveBetButton,
+    //                 this.fiftBetButton,
+    //                 this.hundredBetButton
+    //             ].forEach(button => {
+    //                 button.setVisible(true)
+    //             });
+    //         }
+    //     });
+    //     const buttons = [
+    //         this.zeroBetButton,
+    //         this.tenBetButton,
+    //         this.twentyFiveBetButton,
+    //         this.fiftBetButton,
+    //         this.hundredBetButton
+    //     ];
+    
+    //     buttons.forEach((button, index) => {
+    //         button.setVisible(true); // Ensure button is visible before tween
+    //         this.scene.tweens.add({
+    //             targets: button,
+    //             x: targetX,
+    //             y: baseY - (spacing * (4 - index)),
+    //             duration: 600,
+    //             ease: 'Elastic',
+    //             easeParams: [1, 0.9],
+    //             delay: index * 100
+    //         });
+    //     });
+    // }
+    tweenBack(button: InteractiveBtn) {
+        button.setInteractive(false);
+        this.scene.tweens.add({
+            targets: button,
+            x: button,
+            duration: 300,
+            ease: 'Elastic',
+            easeParams: [1, 0.9],
+            onComplete: () => {
+                // this.openPopupBg.setVisible(false)
+                button.setVisible(false);
+                this.autoBetBg.setVisible(false)
+            }
+        });
     }
 
     /**
@@ -101,12 +308,10 @@ export class UiContainer extends Phaser.GameObjects.Container {
     spinBtnInit(spinCallBack: () => void) {
         this.spinBtn = new Phaser.GameObjects.Sprite(this.scene, 0, 0, "spinBtn");
         this.spinBtn = this.createButton('spinBtn', gameConfig.scale.width / 1.1, gameConfig.scale.height/1.1, () => {
-                this.bnuttonMusic("spinButton");
+            this.bnuttonMusic("spinButton");
                
             // checking if autoSpining is working or not if it is auto Spining then stop it
             if(this.isAutoSpinning){
-                // this.autoBetBtn.emit('pointerdown'); // Simulate the pointerdown event
-                // this.autoBetBtn.emit('pointerup'); // Simulate the pointerup event (if needed)
                 return;
             }
         // tween added to scale traINnsition
@@ -215,25 +420,14 @@ export class UiContainer extends Phaser.GameObjects.Container {
    
     autoSpinRec(spin: boolean){
         if(spin){
-            // this.spinBtn.setTexture("spinBtnOnPressed"); 
             this.spinBtn.setTexture("spinBtn");
-            // this.autoBetBtn.setTexture("autoSpinOnPressed");
-            // this.autoBetBtn.setTexture("autoSpin");
-            // this.maxbetBtn.disableInteractive();
-            // this.maxbetBtn.setTexture("maxBetBtOnPressed");
             this.pBtn.disableInteractive();
             this.pBtn.setTexture("pBtnH")
-            // this.spinBtn.setAlpha(0.5)
-            // this.autoBetBtn.setAlpha(0.5)
+           
         }else{
             this.spinBtn.setTexture("spinBtn");
-            // this.autoBetBtn.setTexture("autoSpin");
-            // this.maxbetBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
             this.pBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
-            // this.autoBetBtn.setAlpha(1)
             this.pBtn.setTexture("pBtn")
-            // this.maxbetBtn.setTexture("maxBetBtn");
-           
         }        
     }
 
@@ -246,11 +440,7 @@ export class UiContainer extends Phaser.GameObjects.Container {
             this.spinBtn.disableInteractive();
             // this.spinBtn.setTexture("spinBtnOnPressed");
             this.spinBtn.setTexture("spinBtn");
-            // this.autoBetBtn.setTexture("autoSpin")
-            // this.autoBetBtn.setTexture("autoSpinOnPressed")
-            // this.autoBetBtn.disableInteractive();
-            // this.maxbetBtn.disableInteractive();
-            // this.maxbetBtn.setTexture("maxBetBtOnPressed");
+           
             this.pBtn.disableInteractive();
             this.pBtn.setTexture("pBtnH")
             this.spinBtn.setAlpha(0.5)
@@ -259,16 +449,11 @@ export class UiContainer extends Phaser.GameObjects.Container {
         }else{
             this.spinBtn.setTexture("spinBtn");
             this.spinBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
-            // this.autoBetBtn.setTexture("autoSpin");
-            // this.autoBetBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
-            // this.maxbetBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
-            // this.maxbetBtn.setTexture("maxBetBtn");
             this.pBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
             this.pBtn.setTexture("pBtn")
             this.spinBtn.setScale(0.8);
-            // this.autoBetBtn.setScale(0.8);
             this.spinBtn.setAlpha(1)
-            // this.autoBetBtn.setAlpha(1)
+          
         }        
     }
 
@@ -283,4 +468,44 @@ export class UiContainer extends Phaser.GameObjects.Container {
             }                    
     }
     
+}
+
+class InteractiveBtn extends Phaser.GameObjects.Sprite {
+    moveToPosition: number = -1;
+    defaultTexture!: Phaser.Textures.Texture;
+    hoverTexture!: Phaser.Textures.Texture
+
+    constructor(scene: Phaser.Scene, textures: Phaser.Textures.Texture[], callback: () => void, endPos: number, visible: boolean) {
+        super(scene, 0, 0, textures[0].key); // Use texture key
+        this.defaultTexture = textures[0];
+        this.hoverTexture = textures[1];        
+        this.setOrigin(0.5);
+        this.setInteractive();
+        this.setVisible(visible);
+        this.setDepth(10)
+        this.moveToPosition = endPos;
+        this.on('pointerover', () => {  // <-- Add this line
+            this.setTexture(this.hoverTexture.key);
+        });
+        this.on('pointerdown', () => {
+            this.setTexture(this.hoverTexture.key)
+            // this.setFrame(1);
+            callback();
+        });
+        this.on('pointerup', () => {
+            this.setTexture(this.defaultTexture.key)
+            // this.setFrame(0);
+        });
+        this.on('pointerout', () => {
+            this.setTexture(this.defaultTexture.key)
+            // this.setFrame(0);
+        });
+        // Set up animations if necessary
+        this.anims.create({
+            key: 'hover',
+            frames: this.anims.generateFrameNumbers(textures[1].key),
+            frameRate: 10,
+            repeat: -1
+        });
+    }
 }

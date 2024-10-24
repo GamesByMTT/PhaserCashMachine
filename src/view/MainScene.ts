@@ -28,6 +28,7 @@ export default class MainScene extends Scene {
     whatUSeeText!: Phaser.GameObjects.Sprite
     taskbar!: Phaser.GameObjects.Sprite;
     slotBg!: Phaser.GameObjects.Sprite;
+    playBtnBg!: Phaser.GameObjects.Sprite;
     slot!: Slots;
     soundManager!: SoundManager;
     uiContainer!: UiContainer;
@@ -59,8 +60,9 @@ export default class MainScene extends Scene {
         this.greenLogo = this.add.sprite(width/2, height/6.2, `${this.Color}Logo`).setScale(0.8);
         this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar");
         this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3 );
+        this.playBtnBg = this.add.sprite(width/1.12, height/1.15, "playButtonBg").setDepth(10)
         this.slotBg = this.add.sprite(width/2, height/1.8, "slotBg")
-        this.mainContainer.add([this.gameBg, this.greenLeftBorder, this.slotBg, this.greenRightBorder, this.greenHead, this.greenLogo, this.whatUSeeText, this.taskbar]);
+        this.mainContainer.add([this.gameBg, this.greenLeftBorder, this.slotBg, this.greenRightBorder, this.greenHead, this.greenLogo, this.whatUSeeText, this.taskbar, this.playBtnBg]);
         this.soundManager.playSound("backgroundMusic");
 
         this.uiContainer = new UiContainer(this, () => this.onSpinCallBack(), this.soundManager);

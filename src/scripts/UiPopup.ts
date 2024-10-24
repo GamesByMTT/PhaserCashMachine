@@ -9,9 +9,12 @@ export class UiPopups extends Phaser.GameObjects.Container {
     SoundManager: SoundManager;
     UiContainer: UiContainer
     menuBtn!: InteractiveBtn;
+    openPopupBg!: Phaser.GameObjects.Sprite
     settingBtn!: InteractiveBtn;
     rulesBtn!: InteractiveBtn;
     infoBtn!: InteractiveBtn;
+    voulmneAdjust!: InteractiveBtn;
+    betControl!: InteractiveBtn;
     exitBtn!: InteractiveBtn
     yesBtn!: InteractiveBtn;
     noBtn!: InteractiveBtn
@@ -28,6 +31,8 @@ export class UiPopups extends Phaser.GameObjects.Container {
         this.menuBtnInit();
         this.exitButton();
         this.infoBtnInit();
+        this.volumenButton();
+        this.betSettingBtn();
         this.UiContainer = uiContainer
         this.SoundManager = soundManager
         scene.add.existing(this);
@@ -40,11 +45,13 @@ export class UiPopups extends Phaser.GameObjects.Container {
         ];
         this.menuBtn = new InteractiveBtn(this.scene, menuBtnTextures, () => {
             this.buttonMusic("buttonpressed")
+            
             this.openPopUp();
         }, 0, true);
         this.menuBtn.setPosition( gameConfig.scale.width / 13, gameConfig.scale.height / 1.1 );
         this.add(this.menuBtn);
     }
+
     exitButton(){
         const exitButtonSprites = [
             this.scene.textures.get('exitButton'),
@@ -68,7 +75,7 @@ export class UiPopups extends Phaser.GameObjects.Container {
             // setting Button
             this.openSettingPopup();
         }, 1, false); // Adjusted the position index
-        this.settingBtn.setPosition(gameConfig.scale.width - this.settingBtn.width * 2, gameConfig.scale.height/2).setScale(0.8);
+        this.settingBtn.setPosition(gameConfig.scale.width - this.settingBtn.width * 2, gameConfig.scale.height/2).setScale(0.5).setDepth(5);
         this.add(this.settingBtn);
     }
 
@@ -82,36 +89,73 @@ export class UiPopups extends Phaser.GameObjects.Container {
             this.buttonMusic("buttonpressed")
             this.openPage();
         }, 2, false); // Adjusted the position index
-        this.infoBtn.setPosition(gameConfig.scale.width/ 2 - this.infoBtn.width * 5, this.infoBtn.height * 0.7).setScale(0.8);
+        this.infoBtn.setPosition(gameConfig.scale.width/ 2 - this.infoBtn.width * 5, this.infoBtn.height * 0.7).setScale(0.5).setDepth(5);
         this.add(this.infoBtn);
+    }
+    volumenButton() {
+        const volumneSprites = [
+            this.scene.textures.get('volumneSpeaker'),
+            this.scene.textures.get('volumneSpeakerH'),
+        ];
+        this.voulmneAdjust = new InteractiveBtn(this.scene, volumneSprites, () => {
+            // info button 
+            this.buttonMusic("buttonpressed")
+            this.openPage();
+        }, 2, false); // Adjusted the position index
+        this.voulmneAdjust.setPosition(gameConfig.scale.width/ 2 - this.voulmneAdjust.width * 5, this.voulmneAdjust.height * 0.7).setDepth(5).setScale(0.5);
+        this.add(this.voulmneAdjust);
+        this.openPopupBg = this.scene.add.sprite(gameConfig.scale.width * 0.075, gameConfig.scale.height * 0.75, "bgPurple").setDepth(5);
+        this.openPopupBg.setVisible(false);
+    }
+
+    betSettingBtn(){
+        const betAdjustBtn = [
+            this.scene.textures.get('betCoins'),
+            this.scene.textures.get('betCoinsH'),
+        ];
+        this.betControl = new InteractiveBtn(this.scene, betAdjustBtn, () => {
+            // info button 
+            this.buttonMusic("buttonpressed")
+            this.openPage();
+        }, 2, false); // Adjusted the position index
+        this.betControl.setPosition(gameConfig.scale.width/ 2 - this.betControl.width * 5, this.betControl.height * 0.7).setScale(0.5);
+        this.add(this.betControl);
     }
 
     openPopUp() {
         // Toggle the isOpen boolean
         this.isOpen = !this.isOpen;
         this.menuBtn.setInteractive(false);
+       
         if (this.isOpen) {
+             // Depth below buttons
+            this.openPopupBg.setVisible(true);
             this.tweenToPosition(this.settingBtn, 1);
             this.tweenToPosition(this.infoBtn, 2);
+            this.tweenToPosition(this.voulmneAdjust, 3);
+            this.tweenToPosition(this.betControl, 4);
         } else {
             this.tweenBack(this.settingBtn);
             this.tweenBack(this.infoBtn);
+            this.tweenBack(this.voulmneAdjust);
+            this.tweenBack(this.betControl);
         }
     }
 
     tweenToPosition(button: InteractiveBtn, index: number) {
-        const targetY =  this.menuBtn.x + (index * (this.menuBtn.width))
+       const targetY =  this.menuBtn.y - (index * (this.menuBtn.height/1.4))
        // Calculate the x position with spacing
        button.setPosition(this.menuBtn.x, this.menuBtn.y)
         button.setVisible(true);
         this.scene.tweens.add({
             targets: button,
-            x: targetY,
-            duration: 300,
+            y: targetY,
+            duration: 600,
             ease: 'Elastic',
             easeParams: [1, 0.9],
             onComplete: () => {
                 button.setInteractive(true);
+                button.setDepth(10);
                 this.menuBtn.setInteractive(true);
             }
         });
@@ -120,11 +164,12 @@ export class UiPopups extends Phaser.GameObjects.Container {
         button.setInteractive(false);
         this.scene.tweens.add({
             targets: button,
-            x: button,
-            duration: 100,
+            y: button,
+            duration: 300,
             ease: 'Elastic',
             easeParams: [1, 0.9],
             onComplete: () => {
+                this.openPopupBg.setVisible(false)
                 button.setVisible(false);
                 this.menuBtn.setInteractive(true);
             }
@@ -307,15 +352,13 @@ export class UiPopups extends Phaser.GameObjects.Container {
         popupBg.setDisplaySize(900, 671); // Set the size for your popup background
         popupBg.setAlpha(1); // Set background transparency
         this.exitBtn.disableInteractive();
-
-        const quitHeading = this.scene.add.text(-150, -250, "QUIT GAME", {color:"#000000", fontSize: "100px", fontFamily: 'crashLandingItalic', })
         // Add text to the popup
-        const popupText = this.scene.add.text(-200, -100, "Do you really want \n to exit?", {color:"#000000", fontSize: "80px", fontFamily: 'crashLandingItalic', align:"center" });
+        const popupText = this.scene.add.text(0, -40, "Do you really want \n to exit?", {color:"#809ed9", fontSize: "80px", fontFamily: 'crashLandingItalic', align:"center" }).setOrigin(0.5);
         
         // Yes and No buttons
         const logoutButtonSprite = [
             this.scene.textures.get("yesButton"),
-            this.scene.textures.get("yesButtonHover")
+            this.scene.textures.get("yesButton")
         ];
         this.yesBtn = new InteractiveBtn(this.scene, logoutButtonSprite, () => {
             
@@ -326,8 +369,8 @@ export class UiPopups extends Phaser.GameObjects.Container {
             Globals.Socket?.socket.emit("EXIT", {});
         }, 0, true);
         const logoutNoButtonSprite = [
-            this.scene.textures.get("yesButton"),
-            this.scene.textures.get("yesButtonHover")
+            this.scene.textures.get("noButton"),
+            this.scene.textures.get("noButton")
         ];
         this.noBtn = new InteractiveBtn(this.scene, logoutNoButtonSprite, () => {
             this.UiContainer.onSpin(false);
@@ -335,13 +378,15 @@ export class UiPopups extends Phaser.GameObjects.Container {
             popupContainer.destroy();
             blurGraphic.destroy(); // Destroy blurGraphic when popup is closed
         }, 0, true);
-        const yesText = this.scene.add.text(-130, 140, "YES", {color:"#000000", fontFamily:"crashLandingItalic", fontSize:"50px"}).setOrigin(0.5)
-        const noText = this.scene.add.text(130, 140, "NO", {color:"#000000", fontFamily:"crashLandingItalic", fontSize:"50px"}).setOrigin(0.5)
-        this.yesBtn.setPosition(-130, 150).setScale(0.8, 0.8);
-        this.noBtn.setPosition(130, 150).setScale(0.8, 0.8);
+        // const yesText = this.scene.add.text(-130, 140, "YES", {color:"#000000", fontFamily:"crashLandingItalic", fontSize:"50px"}).setOrigin(0.5)
+        // const noText = this.scene.add.text(130, 140, "NO", {color:"#000000", fontFamily:"crashLandingItalic", fontSize:"50px"}).setOrigin(0.5)
+        this.yesBtn.setPosition(-130, 150).setScale(1.3)
+        this.noBtn.setPosition(130, 150).setScale(1.3)
        
         // Add all elements to popupContainer
-        popupContainer.add([popupBg, popupText, quitHeading, this.yesBtn,yesText, this.noBtn, noText]);
+        // popupContainer.add([popupBg, popupText, this.yesBtn,yesText, this.noBtn, noText]);
+        popupContainer.add([popupBg, popupText, this.yesBtn, this.noBtn ]);
+
         // Add popupContainer to the scene
         this.scene.add.existing(popupContainer);       
     }
