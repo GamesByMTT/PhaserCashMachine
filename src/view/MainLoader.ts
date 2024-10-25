@@ -46,8 +46,7 @@ export default class MainLoader extends Scene {
     private setupFontLoader() {
         WebFont.load({
             custom: {
-                families: ['CrashLandingItalic'],
-                urls: ['src/fonts/CrashLandingBB.ttf']
+                families: ['Arial'],
             },
             active: () => {
                 // Fonts have loaded

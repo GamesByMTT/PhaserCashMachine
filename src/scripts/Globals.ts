@@ -105,6 +105,7 @@ export const ResultData = {
       isNewAdded: false,
     },
     isReSpinRunning: false,
+    autoSpinCount: 0,
     isBonus: false,
     jackpot: 0,
     linesToEmit: [],
