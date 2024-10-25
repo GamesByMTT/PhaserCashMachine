@@ -162,12 +162,12 @@ export class Slots extends Phaser.GameObjects.Container {
             }
         }
 
-        //Setting the Timer for response wait
-        this.connectionTimeout = this.scene.time.addEvent({
-            delay: 20000, // 20 seconds (adjust as needed)
-            callback: this.showDisconnectionScene,
-            callbackScope: this // Important for the 'this' context
-        });
+        // //Setting the Timer for response wait
+        // this.connectionTimeout = this.scene.time.addEvent({
+        //     delay: 20000, // 20 seconds (adjust as needed)
+        //     callback: this.showDisconnectionScene,
+        //     callbackScope: this // Important for the 'this' context
+        // });
         // this.uiContainer.maxbetBtn.disableInteractive();
     }
 
@@ -215,7 +215,7 @@ export class Slots extends Phaser.GameObjects.Container {
         this.scene.tweens.add({
             targets: reel,
             y: targetY, // Animate relative to the current position
-            duration: 700,
+            duration: 300,
             ease: 'Bounce.easeOut',
             // ease: 'Cubic.easeOut',
             onComplete: () => {
@@ -271,7 +271,7 @@ export class Slots extends Phaser.GameObjects.Container {
                     if (elementId !== '0') {
                         if (this.slotSymbols[y] && this.slotSymbols[y][x]) {
                             this.playSymbolAnimation(x, y, elementId);
-                            console.log(x, "column");
+                            // console.log(x, "column");
                             if(x == 0){
                                 this.leftCircleWinning.setVisible(true);
                             } else if(x == 1){

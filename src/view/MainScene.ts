@@ -134,7 +134,6 @@ export default class MainScene extends Scene {
                 this.slot.stopTween();
             }, 1000);
             if(ResultData.gameData.hasReSpin){
-                
                 this.time.delayedCall(2000, () => {
                     if(this.greenLogo){
                         this.greenLogo.destroy()
