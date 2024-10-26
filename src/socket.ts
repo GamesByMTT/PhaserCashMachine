@@ -65,8 +65,11 @@ export class SocketManager {
             setTimeout(() => {
                 ResultData.gameData = data.message.gameData;
                 ResultData.playerData = data.message.PlayerData;
+                ResultData.gameData.countReSpin = 0;
                 Globals.emitter?.Call("ResultData");
             }, 1000);
+            console.log("ResultData", data.message.gameData);
+            
         }
       });
     });

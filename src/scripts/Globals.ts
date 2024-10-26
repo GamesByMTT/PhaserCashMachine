@@ -93,10 +93,10 @@ export const currentGameData = {
 
 export const ResultData = {
   gameData: {
-    hasReSpin: false,
-    hasRedSpin: true,
-    BonusResult: [],
     countReSpin: 0,
+    hasReSpin: false,
+    hasRedSpin: false,
+    BonusResult: [],
     BonusStopIndex: -1,
     resultSymbols: [[]],
     WinAmout: 0,

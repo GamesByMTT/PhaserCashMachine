@@ -36,7 +36,11 @@ export class UiContainer extends Phaser.GameObjects.Container {
     betButtonDisable!: Phaser.GameObjects.Container;
     autoSpinBorder!: Phaser.GameObjects.Sprite;
     isOpen: boolean = false;
-    delayTime: number = 5000
+    delayTime: number = 6000;
+    private autoSpinDelay: number = 0; // Time to delay the next auto spin
+    private isRespinActive: boolean = false;
+    private lastSpinCallback: (() => void) | null = null;
+    private pendingAutoSpinCount: number = 0;   
     private winTween: Phaser.Tweens.Tween | null = null; // Store the win tween
 
     constructor(scene: Scene, spinCallBack: () => void, soundManager: SoundManager) {
@@ -75,14 +79,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
           
             if (!currentGameData.isMoving) {
                 this.openbetSettingpopup()
-                // currentGameData.currentBetIndex++;
-                // if (currentGameData.currentBetIndex >= initData.gameData.Bets.length) {
-                //     currentGameData.currentBetIndex = 0;
-                // }
-                // const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
-                // Globals.emitter?.Call("betChange");
-                // this.CurrentLineText.updateLabelText(betAmount);
-                // this.CurrentBetText.updateLabelText(updatedBetAmount.toString());
             }
             this.scene.time.delayedCall(200, () => {
                 this.pBtn.setTexture('pBtn');
@@ -367,6 +363,7 @@ export class UiContainer extends Phaser.GameObjects.Container {
            this.bnuttonMusic("spinButton");
                 // checking if autoSpining is working or not if it is auto Spining then stop it
                 if(this.isAutoSpinning){
+                    this.stopAutoSpin();
                     return;
                 }
                 if(ResultData.gameData.autoSpinCount > 0){
@@ -387,20 +384,16 @@ export class UiContainer extends Phaser.GameObjects.Container {
             targets: this.newSpinButton,
             duration: 100,
             onComplete: () => {
+                spinCallBack();
                 Globals.Socket?.sendMessage("SPIN", {
                     currentBet: currentGameData.currentBetIndex,
                     matrixX: currentGameData.currentBetIndex + 1,
-                    currentLines: 1
+                    // currentLines: 1
                 });
                 currentGameData.currentBalance -= initData.gameData.Bets[currentGameData.currentBetIndex];
                 this.currentBalanceText.updateLabelText(currentGameData.currentBalance.toFixed(2));
                 this.onSpin(true);
-                spinCallBack();
-                if(ResultData.gameData.hasReSpin){
-                    this.delayTime = ResultData.gameData.resultSymbols.length * this.delayTime
-                }else{
-                    this.delayTime = 5000;
-                }
+                
             }
         });
     }
@@ -445,21 +438,83 @@ export class UiContainer extends Phaser.GameObjects.Container {
     }
 
     autoSpin(count: number, spinCallBack: () => void) {
+        this.lastSpinCallback = spinCallBack; // Store callback for later use
+        
         if (count <= 0 || currentGameData.currentBalance < initData.gameData.Bets[currentGameData.currentBetIndex]) {
-            this.isAutoSpinning = false; // Stop auto-spinning if count is 0 or balance is insufficient
-            this.setNumberofAutoSpin(0); // Reset auto-spin display
+            this.isAutoSpinning = false;
+            this.setNumberofAutoSpin(0);
+            this.autoSpinDelay = 0;
+            this.isRespinActive = false; 
             return;
         }
-        console.log(this.delayTime, "delayTimedelayTimedelayTime");
-        this.scene.time.delayedCall(this.delayTime, () => { // Adjust delay as needed
-            this.singleSpin(() => { // Use singleSpin for each individual spin
-                spinCallBack();
-                const newCount = count - 1;
-                ResultData.gameData.autoSpinCount = newCount
-                this.setNumberofAutoSpin(newCount);
-                this.autoSpin(count - 1, spinCallBack); // Recursive call
-            });
+    
+        if (this.isRespinActive) {
+            this.pendingAutoSpinCount = count; // Store the count for later
+            return;
+        }
+    
+        const isFirstSpin = this.autoSpinDelay === 0;
+        
+        this.singleSpin(() => {
+            spinCallBack();
+            const newCount = count - 1;
+            ResultData.gameData.autoSpinCount = newCount;
+            this.setNumberofAutoSpin(newCount);
+    
+            if (ResultData.gameData.hasReSpin) {
+                this.isRespinActive = true;
+                this.pendingAutoSpinCount = newCount;
+                this.autoSpinDelay = ResultData.gameData.resultSymbols.length * 6000;
+            } else if (newCount > 0) {
+                this.scene.time.delayedCall(this.delayTime, () => {
+                    this.autoSpin(newCount, spinCallBack);
+                });
+            }
         });
+    }
+    
+    // Add this new method to resume auto-spin
+    resumeAutoSpin() {
+        if (this.pendingAutoSpinCount > 0 && this.lastSpinCallback && this.isAutoSpinning) {
+            this.isRespinActive = false;
+            this.scene.time.delayedCall(this.delayTime, () => {
+                this.autoSpin(this.pendingAutoSpinCount, this.lastSpinCallback!);
+            });
+        }
+    }
+
+    // Add a method to manually control respin state if needed
+    setRespinState(isActive: boolean) {
+        console.error(isActive, "isActive");
+        this.isRespinActive = isActive;
+        
+        if (!isActive && this.isAutoSpinning) {
+            this.resumeAutoSpin();
+        }
+    }
+
+    // Update your update method to handle respin state
+    update() {
+        if (ResultData.gameData.hasReSpin && !this.isRespinActive) {
+            this.isRespinActive = true;
+        }
+    }
+
+    stopAutoSpin() {
+        this.isAutoSpinning = false;
+        this.isRespinActive = false;
+        ResultData.gameData.autoSpinCount = 0;
+        this.setNumberofAutoSpin(0);
+        this.autoSpinDelay = 0;
+        
+        this.newSpinButton.setTexture(this.newSpinButton.defaultTexture.key);
+        this.newSpinButton.setAlpha(1);
+        
+        this.newSpinButton.setInteractive({ useHandCursor: true, pixelPerfect: true });
+        this.pBtn.setInteractive({ useHandCursor: true, pixelPerfect: true });
+        this.pBtn.setTexture("pBtn");
+    
+        this.scene.time.removeAllEvents();
     }
 
     createButton(key: string, x: number, y: number, callback: () => void): Phaser.GameObjects.Sprite {
@@ -502,15 +557,8 @@ export class UiContainer extends Phaser.GameObjects.Container {
 
     bnuttonMusic(key: string){
         this.SoundManager.playSound(key)
-    }
-    update() {          
-            if(parseFloat(this.currentWiningText.text) === 0){
-                if(this.winTween){
-                    this.winTween.stop();
-                }
-            }                    
-    }
-    
+    }  
+   
 }
 
 class InteractiveBtn extends Phaser.GameObjects.Sprite {

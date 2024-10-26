@@ -35,10 +35,12 @@ export default class MainScene extends Scene {
     uiPopups!: UiPopups;    
     lineSymbols!: LineSymbols;
     private mainContainer!: Phaser.GameObjects.Container;
+    private newmainContainer!: Phaser.GameObjects.Container;
     private betIndexImages: Phaser.GameObjects.Image[] = [];
     private hideReelsTimer: Phaser.Time.TimerEvent | null = null;
     private respinSprite: Phaser.GameObjects.Sprite | null = null;
-    private Color: "red" | "green" = "green"
+    private Color: "red" | "green" = "green";
+    private colorSprites: Phaser.GameObjects.Sprite[] = []; // Array to store color-dependent sprites
     constructor() {
         super({ key: 'MainScene' });
     }
@@ -49,22 +51,14 @@ export default class MainScene extends Scene {
         this.mainContainer = this.add.container();
         this.soundManager = new SoundManager(this);
         console.log("MainScene Loaded on Cash Machine");
-
-        this.gameBg = this.add.sprite(width / 2, height / 2, `${this.Color}Background`)
-            .setDepth(0)
-            .setDisplaySize(1920, 1080);
-        this.greenLeftBorder = this.add.sprite(width * 0.07, height/2.3, `${this.Color}LeftBorder`).setScale(0.6)
-        this.greenRightBorder = this.add.sprite(width * 0.93, height/2.3, `${this.Color}RightBorder`).setScale(0.6)
-       
-        this.greenHead = this.add.sprite(width/2, height / 5.3, `${this.Color}Head`).setScale(0.9); 
-        this.greenLogo = this.add.sprite(width/2, height/6.2, `${this.Color}Logo`).setScale(0.8);
         this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar");
         this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3 );
         this.playBtnBg = this.add.sprite(width/1.12, height/1.15, "playButtonBg").setDepth(10)
         this.slotBg = this.add.sprite(width/2, height/1.8, "slotBg")
-        this.mainContainer.add([this.gameBg, this.greenLeftBorder, this.slotBg, this.greenRightBorder, this.greenHead, this.greenLogo, this.whatUSeeText, this.taskbar, this.playBtnBg]);
+        this.createColorSprites("green");
+        this.mainContainer.add([this.slotBg, this.whatUSeeText, this.taskbar, this.playBtnBg]);
         this.soundManager.playSound("backgroundMusic");
-
+        
         this.uiContainer = new UiContainer(this, () => this.onSpinCallBack(), this.soundManager);
         this.mainContainer.add(this.uiContainer);
 
@@ -75,12 +69,46 @@ export default class MainScene extends Scene {
         this.uiPopups = new UiPopups(this, this.uiContainer, this.soundManager);
         this.mainContainer.add(this.uiPopups);
         this.hideReels();
-
-        // this.lineSymbols = new LineSymbols(this, 10, 12, this.lineGenerator);
-        // this.mainContainer.add(this.lineSymbols);
     }
+   
     update(time: number, delta: number) {
+        const isMoving = this.slot.isAnySymbolMoving();
+        if (ResultData.gameData.hasRedSpin && !isMoving && this.Color !== "red") {
+            this.changeColor("red");
+        } else if (!ResultData.gameData.hasRedSpin && this.Color !== "green") {
+            this.changeColor("green");
+        }
         this.uiContainer.update();
+    }
+
+    private createColorSprites(color: "red" | "green") {
+        const { width, height } = this.cameras.main;
+        // Destroy existing color sprites if any
+        this.colorSprites.forEach(sprite => {
+            if(sprite === this.gameBg || sprite === this.greenHead || sprite === this.greenFirstCircle || sprite === this.greenLeftBorder || sprite === this.greenRightBorder || sprite === this.greenFirstCircle || sprite === this.greenSecondCircle || sprite === this.greencenterFrame){
+                sprite.destroy()
+            }
+        });
+        this.colorSprites = [];
+
+        this.gameBg = this.add.sprite(width / 2, height / 2, `${color}Background`)
+            .setDepth(0)
+            .setDisplaySize(1920, 1080);
+        this.greenLeftBorder = this.add.sprite(width * 0.07, height / 2.3, `${color}LeftBorder`).setScale(0.6)
+        this.greenRightBorder = this.add.sprite(width * 0.93, height / 2.3, `${color}RightBorder`).setScale(0.6)
+        this.greenHead = this.add.sprite(width / 2, height / 5.3, `${color}Head`).setScale(0.9);
+        this.greenLogo = this.add.sprite(width / 2, height / 6.2, `${color}Logo`).setScale(0.8);
+        this.greenFirstCircle = this.add.sprite(width * 0.25, height / 1.9, `${color}Circle`).setScale(0.7).setDepth(5);
+        this.greenSecondCircle = this.add.sprite(width * 0.75, height / 1.9, `${color}Circle`).setScale(0.7).setDepth(5);
+        this.greencenterFrame = this.add.sprite(width / 2, height / 1.8, `${color}CentreFrame`).setScale(0.48).setDepth(5);
+
+        // Add all color-dependent sprites to the array
+        this.colorSprites.push(this.gameBg, this.greenLeftBorder, this.greenRightBorder, this.greenHead, this.greenLogo, this.greenFirstCircle, this.greenSecondCircle, this.greencenterFrame);
+
+        this.mainContainer.add(this.colorSprites); // Add to the container
+
+        // You'll also need to add the other sprites (taskbar, slotBg, playBtnBg, etc.) to the mainContainer here as well, if they weren't already.
+        this.mainContainer.add([this.taskbar, this.slotBg, this.playBtnBg, this.whatUSeeText]); // Example, adjust as needed
     }
 
     private onResultCallBack() {
@@ -124,6 +152,19 @@ export default class MainScene extends Scene {
         })
     }
 
+    private changeColor(newColor: "red" | "green") {
+        this.Color = newColor;
+        this.createColorSprites(newColor); // Recreate sprites with the new color
+        this.hideReels()
+        // Update respin animation if it's playing
+        if (this.respinSprite) {
+            this.respinSprite.stop();
+            this.respinSprite.destroy();
+            this.playRespinAnimation(); // Restart animation with new color
+        }
+    }
+
+
     recievedMessage(msgType: string, msgParams: any) {
         if (msgType === 'ResultData') {
             setTimeout(() => {
@@ -144,14 +185,19 @@ export default class MainScene extends Scene {
                 const totalNumberOfRespin = ResultData.gameData.resultSymbols.length - 1
                 for(let i = 0; i<totalNumberOfRespin; i++){
                     setTimeout(() => {
+                        console.log(ResultData.gameData.countReSpin);
+                        
                         ResultData.gameData.countReSpin += 1;
+                        console.log(ResultData.gameData.countReSpin);
+                        
                         ResultData.gameData.isReSpinRunning = true;
-                        this.onSpinCallBack()
+                       
                         if (i === totalNumberOfRespin - 1) {
                             // Set hasReSpin to false after a short delay
                             setTimeout(() => {
                                 ResultData.gameData.hasReSpin = false;
                                 ResultData.gameData.isReSpinRunning = false;
+                                this.uiContainer.setRespinState(false); // This will now trigger the auto-spin to resume
                                 ResultData.gameData.countReSpin = 0;
                                 if(this.respinSprite){
                                     this.respinSprite.stop();
@@ -159,9 +205,10 @@ export default class MainScene extends Scene {
                                     this.respinSprite = null;
                                     this.greenLogo = this.add.sprite(this.cameras.main.width/2, this.cameras.main.height/6.2, `${this.Color}Logo`).setScale(0.8);
                                 }
-                            }, 1000); // Short delay to ensure it runs after the last respin
+                            }, 2000); // Short delay to ensure it runs after the last respin
                         }
-                    }, 6000* (i + 1));
+                        this.onSpinCallBack()
+                    }, 6000 * (i + 1));
                 }
             }else{
                 if(this.greenLogo){
@@ -206,11 +253,9 @@ export default class MainScene extends Scene {
         let betValue = (initData.gameData.Bets[currentGameData.currentBetIndex]) * 20;
         let winAmount = ResultData.gameData.WinAmout;
         this.uiContainer.currentBalanceText.updateLabelText(currentGameData.currentBalance.toFixed(2));
-        if (winAmount >= 15 * betValue && winAmount < 20 * betValue) {
+        if (winAmount >= 5 * betValue) {
             this.showWinPopup(winAmount, 'hugeWinPopup');
-        } else if (winAmount >= 20 * betValue && winAmount < 25 * betValue) {
-            this.showWinPopup(winAmount, 'megaWinPopup');
-        }
+        } 
     }
 
     // Function to show win popup
@@ -224,43 +269,34 @@ export default class MainScene extends Scene {
             pointer.event.stopPropagation(); 
         });
 
-        const megaWinBg = this.add.sprite(gameConfig.scale.width / 2, gameConfig.scale.height / 2, "megawinAnimBg")
-            .setDepth(10)
-            .setOrigin(0.5);
+        const coinFrames = [];
+        for (let i = 1; i < 138; i++) {
+            coinFrames.push({ key: `nicewin${i}` });
+        }
 
-        const megaWinStar = this.add.sprite(gameConfig.scale.width / 2, gameConfig.scale.height / 2, "megawinStar")
-            .setDepth(12)
-            .setOrigin(0.5)
-            .setScale(0); 
-
-        this.tweens.add({
-            targets: megaWinStar,
-            scale: 1,
-            duration: 500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-            delay: 250 
+        this.anims.create({
+            key: `niceWin`,
+            frames: coinFrames,
+            frameRate: 20,
+            repeat: 0
         });
+    
 
-        const winSprite = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY - 50, spriteKey)
-            .setScale(0.8)
-            .setDepth(13);
+        const winningSprite = this.add.sprite(gameConfig.scale.width / 2, gameConfig.scale.height/2, `nicewin1`)
+        .setDepth(13)
+        .play('niceWin');
 
         this.tweens.addCounter({
             from: 0,
             to: winAmount,
             duration: 1000,
             onUpdate: (tween) => {
-                // You might want to do something with the incrementing value here
-                // For example, update a text object
             },
             onComplete: () => {
                 this.time.delayedCall(4000, () => {
                     inputOverlay.destroy();
-                    megaWinBg.destroy();
-                    megaWinStar.destroy();
-                    winSprite.destroy();
+                    winningSprite.stop();
+                    winningSprite.destroy();
                 });
             }
         });

@@ -61,7 +61,7 @@ export class Slots extends Phaser.GameObjects.Container {
             x: gameConfig.scale.width /4.1,
             y: gameConfig.scale.height /1.85    
         };
-        const totalSymbol = 3;
+        const totalSymbol = 18;
         const visibleSymbol = 1;
         const startIndex = 1;
         const initialYOffset = (totalSymbol - startIndex - visibleSymbol) * this.spacingY;
@@ -103,13 +103,14 @@ export class Slots extends Phaser.GameObjects.Container {
         this.add(this.rightCircleWinning);
     }
     getFilteredSymbolKeys(): string[] {
-        // Filter symbols based on the pattern
-        const allSprites = Globals.resources;
+        // // Filter symbols based on the pattern
+        // const allSprites = Globals.resources;
         const allSpriteKeys = Object.keys(Globals.resources); // Get all keys from Globals.resources
         const filteredSprites = allSpriteKeys.filter(spriteName => {
             const regex = new RegExp(`^${this.Color}slots\\d+_\\d+$`);
             return regex.test(spriteName);
         });
+        
         return filteredSprites;
     }
 
@@ -155,7 +156,6 @@ export class Slots extends Phaser.GameObjects.Container {
                     const elementId = row[x];
                     if (elementId == '0') { 
                         console.log(x, "wwhich column");
-                        
                         this.startReelSpin(x);
                     }
                 }
@@ -243,7 +243,11 @@ export class Slots extends Phaser.GameObjects.Container {
         const { width, height } = this.scene.cameras.main;
         this.resultCallBack(); // Call the result callback
         if(ResultData.gameData.isReSpinRunning){
+            console.log(ResultData.gameData.countReSpin);
+            
             const row = ResultData.gameData.resultSymbols[ResultData.gameData.countReSpin - 1];
+            console.log(row);
+            
             for (let x = 0; x < row.length; x++) {
                 const elementId = row[x];
                 if (elementId !== '0') {
@@ -262,6 +266,10 @@ export class Slots extends Phaser.GameObjects.Container {
                 } else {
                     // console.log(`Skipping animation for symbol at (${y}, ${x})`);
                 }
+            }
+            if(ResultData.gameData.countReSpin == 0){
+                console.log("Khtam ho gye reSpin");
+                this.uiContainer.setRespinState(true)
             }
         }else{
                 let y = 0;
@@ -320,6 +328,17 @@ export class Slots extends Phaser.GameObjects.Container {
     }
     winMusic(key: string){
         this.SoundManager.playSound(key)
+    }
+
+    isAnySymbolMoving(): boolean {
+        for (let i = 0; i < this.slotSymbols.length; i++) {
+            for (let j = 0; j < this.slotSymbols[i].length; j++) {
+                if (this.slotSymbols[i][j].startMoving) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
 }
