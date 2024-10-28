@@ -21,6 +21,8 @@ export class Slots extends Phaser.GameObjects.Container {
     private symbolHeight: number;
     private spacingX: number;
     private spacingY: number;
+    private winningContainer!: Phaser.GameObjects.Container;
+    private symbolsContainer!: Phaser.GameObjects.Container;
     leftCircleWinning!: Phaser.GameObjects.Sprite;
     rightCircleWinning!: Phaser.GameObjects.Sprite;
     centerWining!: Phaser.GameObjects.Sprite;
@@ -33,10 +35,15 @@ export class Slots extends Phaser.GameObjects.Container {
         super(scene);
         this.resultCallBack = callback;
         this.uiContainer = uiContainer;
-        this.SoundManager = SoundManager
+        this.SoundManager = SoundManager;
+        this.winningContainer = new Phaser.GameObjects.Container(scene);
+        this.winningContainer.setDepth(1);
+        this.add(this.winningContainer);
         this.createWinningSprites();
+        this.symbolsContainer = new Phaser.GameObjects.Container(scene);
+        this.symbolsContainer.setDepth(2);
+        this.add(this.symbolsContainer);
         this.slotMask = new Phaser.GameObjects.Graphics(scene);
-        
         this.maskWidth = gameConfig.scale.width;
         this.maskHeight = 420;
         // this.slotMask.fillStyle(0xffffff, 1);
@@ -88,19 +95,61 @@ export class Slots extends Phaser.GameObjects.Container {
             }
             reelContainer.height = this.slotSymbols[i].length * this.spacingY;
             reelContainer.setPosition(reelContainer.x, -initialYOffset);
-            this.add(reelContainer); 
+            this.symbolsContainer.add(reelContainer);
+            // this.add(reelContainer); 
         }
        
     }
-    
+
+    updateColor(newColor: "red" | "green") {
+        this.Color = newColor;
+        // Update symbol keys
+        this.symbolKeys = this.getFilteredSymbolKeys();
+
+        for (let i = 0; i < this.slotSymbols.length; i++) {
+            for (let j = 0; j < this.slotSymbols[i].length; j++) {
+                const symbol = this.slotSymbols[i][j];
+                // Stop any current animation
+                if (symbol.symbol.anims.isPlaying) {
+                    symbol.symbol.anims.stop();
+                }
+                
+                // Remove the animation if it exists
+                const currentKey = symbol.symbol.texture.key;
+                const match = currentKey.match(/^(red|green)slots(\d+)_(\d+)$/);
+                if (match) {
+                    const [, , symbolNum] = match;
+                    const animKey = `symbol_anim_${symbolNum}_${this.Color}`;
+                    if (this.scene.anims.exists(animKey)) {
+                        this.scene.anims.remove(animKey);
+                    }
+                }
+            }
+        }
+        // Update all symbols
+        this.updateSymbolTextures();
+        // Update winning sprites
+        this.updateWinningSprites(); 
+    }
+
     private createWinningSprites() {
         const { width, height } = this.scene.cameras.main;
-        this.leftCircleWinning = this.scene.add.sprite(width * 0.25, height/1.8, `${this.Color}CircleWinning`).setDepth(1).setVisible(false);
-        this.centerWining = this.scene.add.sprite(width / 2, height / 1.8, `${this.Color}CenterWinning`).setDepth(1).setVisible(false);
-        this.rightCircleWinning = this.scene.add.sprite(width * 0.75, height / 1.8, `${this.Color}CircleWinning`).setDepth(1).setVisible(false);
-        this.add(this.leftCircleWinning);
-        this.add(this.centerWining);
-        this.add(this.rightCircleWinning);
+        
+        this.leftCircleWinning = this.scene.add.sprite(width * 0.25, height/1.8, `${this.Color}CircleWinning`)
+            .setVisible(false);
+        
+        this.centerWining = this.scene.add.sprite(width / 2, height / 1.8, `${this.Color}CenterWinning`)
+            .setVisible(false);
+        
+        this.rightCircleWinning = this.scene.add.sprite(width * 0.75, height / 1.8, `${this.Color}CircleWinning`)
+            .setVisible(false);
+        
+        // Add to winning container instead of this
+        this.winningContainer.add([
+            this.leftCircleWinning,
+            this.centerWining,
+            this.rightCircleWinning
+        ]);
     }
     getFilteredSymbolKeys(): string[] {
         // // Filter symbols based on the pattern
@@ -243,11 +292,7 @@ export class Slots extends Phaser.GameObjects.Container {
         const { width, height } = this.scene.cameras.main;
         this.resultCallBack(); // Call the result callback
         if(ResultData.gameData.isReSpinRunning){
-            console.log(ResultData.gameData.countReSpin);
-            
             const row = ResultData.gameData.resultSymbols[ResultData.gameData.countReSpin - 1];
-            console.log(row);
-            
             for (let x = 0; x < row.length; x++) {
                 const elementId = row[x];
                 if (elementId !== '0') {
@@ -268,7 +313,6 @@ export class Slots extends Phaser.GameObjects.Container {
                 }
             }
             if(ResultData.gameData.countReSpin == 0){
-                console.log("Khtam ho gye reSpin");
                 this.uiContainer.setRespinState(true)
             }
         }else{
@@ -294,19 +338,24 @@ export class Slots extends Phaser.GameObjects.Container {
                         // console.log(`Skipping animation for symbol at (${y}, ${x})`);
                     }
                 }
-            
         }
         
     }
 
     playSymbolAnimation(y: number, x: number, elementId: string) {
         const symbol = this.slotSymbols[y][x];
-        const animationId = `symbol_anim_${elementId}`;
-
+        const animationColor = ResultData.gameData.hasRedSpin ? "red" : this.Color;
+        // const animationId = `symbol_anim_${elementId}`;
+        const animationId = `symbol_anim_${elementId}_${animationColor}`;
+        console.log(animationColor, "this.Color in playSymbolAnimation", animationId);
+         // Remove existing animation if it exists
+        if (this.scene.anims.exists(animationId)) {
+            this.scene.anims.remove(animationId);
+        }
         if (!this.scene.anims.exists(animationId)) {
             let textureKeys: string[] = [];
             for (let i = 0; i < 36; i++) {
-                const textureKey = `${this.Color}slots${elementId}_${i}`;
+                const textureKey = `${animationColor}slots${elementId}_${i}`; // Use animationColor here
                 if (this.scene.textures.exists(textureKey)) {
                     textureKeys.push(textureKey);
                 }
@@ -322,6 +371,7 @@ export class Slots extends Phaser.GameObjects.Container {
         }
 
         if (this.scene.anims.exists(animationId)) {
+            symbol.Color = animationColor;
             symbol.playAnimation(animationId);
         } else {
         }
@@ -340,6 +390,60 @@ export class Slots extends Phaser.GameObjects.Container {
         }
         return false;
     }
+    private updateSymbolTextures() {
+        for (let i = 0; i < this.slotSymbols.length; i++) {
+            for (let j = 0; j < this.slotSymbols[i].length; j++) {
+                const symbol = this.slotSymbols[i][j];
+                
+                // Get current symbol number
+                const currentKey = symbol.symbol.texture.key;
+                const match = currentKey.match(/^(red|green)slots(\d+)_(\d+)$/);
+                
+                if (match) {
+                    const [, , symbolNum, frameNum] = match;
+                    // Update to new color
+                    const newKey = `${this.Color}slots${symbolNum}_${frameNum}`;
+                    if (this.scene.textures.exists(newKey)) {
+                        symbol.symbol.setTexture(newKey);
+                    }
+                }
+                
+                // Update symbol's color property
+                symbol.Color = this.Color;
+            }
+        }
+    }
+    private updateWinningSprites() {
+        const { width, height } = this.scene.cameras.main;
+        
+        // Remove from container before destroying
+        this.winningContainer.remove(this.leftCircleWinning);
+        this.winningContainer.remove(this.centerWining);
+        this.winningContainer.remove(this.rightCircleWinning);
+        
+        // Destroy old sprites
+        this.leftCircleWinning.destroy();
+        this.centerWining.destroy();
+        this.rightCircleWinning.destroy();
+        
+        // Create new sprites
+        this.leftCircleWinning = this.scene.add.sprite(width * 0.25, height/1.8, `${this.Color}CircleWinning`)
+            .setVisible(false);
+        
+        this.centerWining = this.scene.add.sprite(width / 2, height / 1.8, `${this.Color}CenterWinning`)
+            .setVisible(false);
+        
+        this.rightCircleWinning = this.scene.add.sprite(width * 0.75, height / 1.8, `${this.Color}CircleWinning`)
+            .setVisible(false);
+        
+        // Add to winning container
+        this.winningContainer.add([
+            this.leftCircleWinning,
+            this.centerWining,
+            this.rightCircleWinning
+        ]);
+    }
+    
     
 }
 
@@ -358,7 +462,7 @@ class Symbols {
     private isMobile: boolean;
     reelContainer: Phaser.GameObjects.Container
     winningSprite: Phaser.GameObjects.Sprite | null = null; 
-    private Color: "red" | "green" = "green"
+    Color: "red" | "green" = "green"
     constructor(scene: Phaser.Scene, symbolKey: string, index: { x: number; y: number }, reelContainer: Phaser.GameObjects.Container) {
         this.scene = scene;
         this.index = index;
@@ -367,6 +471,7 @@ class Symbols {
         this.symbol = new Phaser.GameObjects.Sprite(scene, 0, 0, updatedSymbolKey);
         this.symbol.setOrigin(0.5, 0.5);
         this.isMobile = scene.sys.game.device.os.android || scene.sys.game.device.os.iOS;
+        this.Color = symbolKey.includes("red") ? "red" : "green";
         // Load textures and create animation
         const textures: string[] = [];
         for (let i = 0; i < 20; i++) {
@@ -394,6 +499,22 @@ class Symbols {
     // to update the slotx_0 to show the 0 index image at the en
 
     playAnimation(animationId: any) {
+        if (this.symbol.anims.isPlaying) {
+            this.symbol.anims.stop();
+        }
+        // Update the symbol's texture color if needed
+        if (ResultData.gameData.hasRedSpin && !this.symbol.texture.key.includes('red')) {
+            const currentKey = this.symbol.texture.key;
+            const match = currentKey.match(/^(red|green)slots(\d+)_(\d+)$/);
+            if (match) {
+                const [, , symbolNum, frameNum] = match;
+                const newKey = `redslots${symbolNum}_${frameNum}`;
+                if (this.scene.textures.exists(newKey)) {
+                    this.symbol.setTexture(newKey);
+                }
+            }
+        }
+
         this.symbol.play(animationId);
     }
     stopAnimation() {
@@ -439,6 +560,4 @@ class Symbols {
             this.startMoving = false; 
         });
     }
-    
-   
 }

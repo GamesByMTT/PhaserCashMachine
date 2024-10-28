@@ -44,17 +44,52 @@ export default class MainScene extends Scene {
     constructor() {
         super({ key: 'MainScene' });
     }
+    private createColorSprites(color: "red" | "green") {
+        const { width, height } = this.cameras.main;
+        // Destroy existing color sprites if any
+        // this.colorSprites.forEach(sprite => {
+        // const spriteKey = sprite.texture.key;
+        // const spriteColor = spriteKey.includes("green") ? "green" : "red";
+        //     if (spriteColor !== color) {
+        //         sprite.destroy();
+        //     }
+        // });
+        this.colorSprites = this.colorSprites.filter(sprite => sprite.active);this.colorSprites.forEach(sprite => {
+            const spriteKey = sprite.texture.key;
+            const spriteColor = spriteKey.includes("green") ? "green" : "red";
+            if (spriteColor !== color) {
+                sprite.destroy();
+            }
+        });
 
+        this.colorSprites = this.colorSprites.filter(sprite => sprite.active);
+
+        this.gameBg = this.add.sprite(width / 2, height / 2, `${color}Background`)
+            .setDepth(0)
+            .setDisplaySize(1920, 1080);
+        this.greenLeftBorder = this.add.sprite(width * 0.07, height / 2.3, `${color}LeftBorder`).setScale(0.6)
+        this.greenRightBorder = this.add.sprite(width * 0.93, height / 2.3, `${color}RightBorder`).setScale(0.6)
+        this.greenHead = this.add.sprite(width / 2, height / 5.3, `${color}Head`).setScale(0.9);
+        this.greenLogo = this.add.sprite(width / 2, height / 6.2, `${color}Logo`).setScale(0.8);
+        this.greenFirstCircle = this.add.sprite(width * 0.25, height / 1.9, `${color}Circle`).setScale(0.7).setDepth(5);
+        this.greenSecondCircle = this.add.sprite(width * 0.75, height / 1.9, `${color}Circle`).setScale(0.7).setDepth(5);
+        this.greencenterFrame = this.add.sprite(width / 2, height / 1.8, `${color}CentreFrame`).setScale(0.48).setDepth(5);
+
+        this.colorSprites.push( this.gameBg, this.greenLeftBorder, this.greenRightBorder, this.greenHead, this.greenLogo, this.greenFirstCircle, this.greenSecondCircle, this.greencenterFrame);
+        this.newmainContainer.add(this.colorSprites); 
+        // this.mainContainer.add([this.taskbar, this.slotBg, this.playBtnBg, this.whatUSeeText]); // Example, adjust as needed
+    }
     create() {
         const { width, height } = this.cameras.main;
+        this.newmainContainer = this.add.container();
         // Container for better organization and potential performance
         this.mainContainer = this.add.container();
         this.soundManager = new SoundManager(this);
         console.log("MainScene Loaded on Cash Machine");
-        this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar");
-        this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3 );
-        this.playBtnBg = this.add.sprite(width/1.12, height/1.15, "playButtonBg").setDepth(10)
-        this.slotBg = this.add.sprite(width/2, height/1.8, "slotBg")
+        this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar").setDepth(20);
+        this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3).setDepth(20);
+        this.playBtnBg = this.add.sprite(width/1.12, height/1.15, "playButtonBg").setDepth(20);
+        this.slotBg = this.add.sprite(width/2, height/1.8, "slotBg").setDepth(1);
         this.createColorSprites("green");
         this.mainContainer.add([this.slotBg, this.whatUSeeText, this.taskbar, this.playBtnBg]);
         this.soundManager.playSound("backgroundMusic");
@@ -81,35 +116,7 @@ export default class MainScene extends Scene {
         this.uiContainer.update();
     }
 
-    private createColorSprites(color: "red" | "green") {
-        const { width, height } = this.cameras.main;
-        // Destroy existing color sprites if any
-        this.colorSprites.forEach(sprite => {
-            if(sprite === this.gameBg || sprite === this.greenHead || sprite === this.greenFirstCircle || sprite === this.greenLeftBorder || sprite === this.greenRightBorder || sprite === this.greenFirstCircle || sprite === this.greenSecondCircle || sprite === this.greencenterFrame){
-                sprite.destroy()
-            }
-        });
-        this.colorSprites = [];
-
-        this.gameBg = this.add.sprite(width / 2, height / 2, `${color}Background`)
-            .setDepth(0)
-            .setDisplaySize(1920, 1080);
-        this.greenLeftBorder = this.add.sprite(width * 0.07, height / 2.3, `${color}LeftBorder`).setScale(0.6)
-        this.greenRightBorder = this.add.sprite(width * 0.93, height / 2.3, `${color}RightBorder`).setScale(0.6)
-        this.greenHead = this.add.sprite(width / 2, height / 5.3, `${color}Head`).setScale(0.9);
-        this.greenLogo = this.add.sprite(width / 2, height / 6.2, `${color}Logo`).setScale(0.8);
-        this.greenFirstCircle = this.add.sprite(width * 0.25, height / 1.9, `${color}Circle`).setScale(0.7).setDepth(5);
-        this.greenSecondCircle = this.add.sprite(width * 0.75, height / 1.9, `${color}Circle`).setScale(0.7).setDepth(5);
-        this.greencenterFrame = this.add.sprite(width / 2, height / 1.8, `${color}CentreFrame`).setScale(0.48).setDepth(5);
-
-        // Add all color-dependent sprites to the array
-        this.colorSprites.push(this.gameBg, this.greenLeftBorder, this.greenRightBorder, this.greenHead, this.greenLogo, this.greenFirstCircle, this.greenSecondCircle, this.greencenterFrame);
-
-        this.mainContainer.add(this.colorSprites); // Add to the container
-
-        // You'll also need to add the other sprites (taskbar, slotBg, playBtnBg, etc.) to the mainContainer here as well, if they weren't already.
-        this.mainContainer.add([this.taskbar, this.slotBg, this.playBtnBg, this.whatUSeeText]); // Example, adjust as needed
-    }
+   
 
     private onResultCallBack() {
         this.uiContainer.onSpin(false);
@@ -153,9 +160,13 @@ export default class MainScene extends Scene {
     }
 
     private changeColor(newColor: "red" | "green") {
+        console.log("changeColor MainScene");
         this.Color = newColor;
         this.createColorSprites(newColor); // Recreate sprites with the new color
         this.hideReels()
+        if (this.slot) {
+            this.slot.updateColor(newColor);
+        }
         // Update respin animation if it's playing
         if (this.respinSprite) {
             this.respinSprite.stop();
@@ -174,7 +185,7 @@ export default class MainScene extends Scene {
             setTimeout(() => {
                 this.slot.stopTween();
             }, 1000);
-            if(ResultData.gameData.hasReSpin){
+            if(ResultData.gameData.hasReSpin || ResultData.gameData.hasRedSpin){
                 this.time.delayedCall(2000, () => {
                     if(this.greenLogo){
                         this.greenLogo.destroy()
@@ -189,9 +200,7 @@ export default class MainScene extends Scene {
                         
                         ResultData.gameData.countReSpin += 1;
                         console.log(ResultData.gameData.countReSpin);
-                        
                         ResultData.gameData.isReSpinRunning = true;
-                       
                         if (i === totalNumberOfRespin - 1) {
                             // Set hasReSpin to false after a short delay
                             setTimeout(() => {
@@ -203,9 +212,10 @@ export default class MainScene extends Scene {
                                     this.respinSprite.stop();
                                     this.respinSprite.destroy();
                                     this.respinSprite = null;
-                                    this.greenLogo = this.add.sprite(this.cameras.main.width/2, this.cameras.main.height/6.2, `${this.Color}Logo`).setScale(0.8);
+                                    this.changeColor("green")
+                                    // this.greenLogo = this.add.sprite(this.cameras.main.width/2, this.cameras.main.height/6.2, `${this.Color}Logo`).setScale(0.8);
                                 }
-                            }, 2000); // Short delay to ensure it runs after the last respin
+                            }, 3000); // Short delay to ensure it runs after the last respin
                         }
                         this.onSpinCallBack()
                     }, 6000 * (i + 1));
@@ -240,9 +250,9 @@ export default class MainScene extends Scene {
         });
         this.respinSprite = this.add.sprite(
             this.cameras.main.width / 2,
-            this.cameras.main.height / 6.3,
+            this.cameras.main.height / 6.8,
             `${this.Color}respin0` // Initial frame
-        ).setDepth(15); // Ensure it's on top
+        ).setDepth(15).setScale(1.1); // Ensure it's on top
         this.respinSprite.play('respinAnimation');
     }
 
