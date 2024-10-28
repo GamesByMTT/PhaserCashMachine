@@ -28,7 +28,15 @@ export class App {
                 arcade: {
                     debug: false
                 }
-            }
+            },
+            input: {
+                activePointers: 3,
+                touch: {
+                    capture: true,
+                    target: document.getElementById('game'), // or your game container
+
+                }
+            },
         });
         // Handle window resize
         window.addEventListener('resize', this.onResize.bind(this));

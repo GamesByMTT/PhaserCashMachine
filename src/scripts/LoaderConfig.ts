@@ -33,13 +33,7 @@ export const LoaderConfig = {
     autoSpinOnPressed : "/src/sprites/ButtonAutoSpinHover_1.png",
     pBtn  :  "/src/sprites/ButtonPlus.png",
     pBtnH  :  "/src/sprites/ButtonPlusHover.png",
-    lines :  "/src/sprites/PanelLines.png",
-    GambleBg: "src/sprites/GambleBg.png",
-    winPanel :  "/src/sprites/PanelWin.png",
-    winPanel1:  "/src/sprites/PanelWin1.png",  
-    bonusLogo: "src/sprites/BonusLogo.png",
-    riskLogo: "src/sprites/RiskLogo.png",      
-    balancePanel :  "/src/sprites/PanelBalance.png",
+
     MenuBtn :  "/src/sprites/ButtonMenu.png",
     MenuBtnH :  "/src/sprites/ButtonMenuHover.png",
     settingBtn :  "/src/sprites/ButtonSettings.png",
@@ -87,37 +81,14 @@ export const LoaderConfig = {
     SettingHeading: "src/sprites/SettingHeading.png",
     betSettingsHeading: "src/sprites/betSettingsHeading.png",
 
-    inofIcon1: "src/sprites/info1.png",
-    inofIcon2: "src/sprites/info2.png",
-    inofIcon3: "src/sprites/info3.png",
-    inofIcon4: "src/sprites/info4.png",
-    inofIcon5: "src/sprites/info5.png",
-    inofIcon6: "src/sprites/info6.png",
-    inofIcon7: "src/sprites/info7.png",
-    inofIcon8: "src/sprites/info8.png",
-
     exitButton: "src/sprites/ExitButton.png",
     exitButtonPressed: "src/sprites/ExitButton.png",
-    PopupBackground: "src/sprites/popupBackground.png",
     messagePopup: "src/sprites/messagePopup.png",
-    hugeWinPopup:"src/sprites/HugeWinPopup.png",
-    megaWinPopup: "src/sprites/MegaWinPopup.png",
-    leftArrow: "src/sprites/leftArrow.png",
-    rightArrow: "src/sprites/RightArrow.png",
-    infoCross: "src/sprites/infoCross.png",
-    disconnectClose: "src/sprites/closeButton.png",
-    // BonusScenegame: "src/sprites/BonusSceneImage.jpg",
-    // riskGameimage: "src/sprites/RiskGameImage.jpg",
 
- 
-    soundImage:"src/sprites/Sounds.png",
     musicImage: "src/sprites/Music.png",
     yesButton:"src/sprites/yesButton.png",
-    yesButtonHover: "src/sprites/yesButtonHover.png",
     noButton:"src/sprites/noButton.png",
-    noButtonHover:"src/sprites/noButtonHover.png",
     sounProgress: "src/sprites/soundProgreesBar.png",
-    soundIndicator: "src/sprites/Indicator.png",
     indicatorSprite: "src/sprites/SliderButton.png",
 
     greenCircleWinning: "src/sprites/greenCircleOverLay.png",
@@ -837,9 +808,6 @@ export const LoaderConfig = {
     nicewin135: "src/sprites/nicewin149.png",
     nicewin136: "src/sprites/nicewin150.png",
     nicewin137: "src/sprites/nicewin151.png",
-
-    megawinAnimBg: "src/sprites/rays.png",
-    megawinStar: "src/sprites/stars.png",
 }
 
 export const staticData = {

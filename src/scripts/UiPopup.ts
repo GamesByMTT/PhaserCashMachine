@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { Globals, initData, ResultData } from "./Globals";
+import { currentGameData, Globals, initData, ResultData } from "./Globals";
 import { gameConfig } from "./appconfig";
 import { UiContainer } from "./UiContainer";
 import SoundManager from "./SoundManager";
@@ -103,13 +103,23 @@ export class UiPopups extends Phaser.GameObjects.Container {
         this.add(this.infoBtn);
     }
     volumenButton() {
-        const volumneSprites = [
-            this.scene.textures.get('volumneSpeaker'),
-            this.scene.textures.get('volumneSpeakerH'),
-        ];
+        let volumneSprites;
+        if(currentGameData.soundMode){
+            volumneSprites = [
+                this.scene.textures.get('volumneSpeaker'),
+                this.scene.textures.get('volumneSpeakerH'),
+            ];
+        }else[
+            volumneSprites = [
+                this.scene.textures.get('volumneSpeaker'),
+                this.scene.textures.get('volumneSpeakerH'),
+            ]
+        ]
         this.voulmneAdjust = new InteractiveBtn(this.scene, volumneSprites, () => {
             // info button 
             this.buttonMusic("buttonpressed")
+            this.openPopUp()
+            this.adjustSoundVolume()
             // this.openPage();
         }, 2, false); // Adjusted the position index
         this.voulmneAdjust.setPosition(gameConfig.scale.width/ 2 - this.voulmneAdjust.width * 5, this.voulmneAdjust.height * 0.7).setDepth(5).setScale(0.5);
@@ -285,37 +295,136 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
                 // Keep the roller within the scrollbar bounds
                 const minY = scrollbarBg.getTopCenter().y + roller.height / 2;
                 const maxY = scrollbarBg.getBottomCenter().y - roller.height / 2;
-        
                 // Clamp roller position
                 dragY = Phaser.Math.Clamp(dragY, minY, maxY);
                 roller.y = dragY;
-        
                 // Calculate the scroll percentage (0 to 1)
                 const scrollPercent = (dragY - minY) / (maxY - minY);
-        
                 // Map the scroll percentage to the content's Y position range
                 const contentMaxY = 300; // The top position of content (relative to mask)
                 const contentMinY = -(contentHeight - 600); // The bottom position of content relative to mask
-        
                 // Update scroll container's Y position based on scroll percentage
                 scrollContainer.y = Phaser.Math.Interpolation.Linear([contentMaxY, contentMinY], scrollPercent);
             });
 
-            this.scene.input.on('wheel', (pointer: any, gameObjects: any, deltaX: number, deltaY: number) => {
-                const minY = scrollbarBg.getTopCenter().y + roller.height / 2;
-                const maxY = scrollbarBg.getBottomCenter().y - roller.height / 2;
+            let startY = 0;
+            let currentY = 0;
+            let isDragging = false;
         
-                // Adjust roller Y position based on mouse wheel movement
-                let newY = roller.y + deltaY * 0.1; // Adjust speed of scroll
-                newY = Phaser.Math.Clamp(newY, minY, maxY);
-                roller.y = newY;
-                // Calculate the scroll percentage (0 to 1)
-                const scrollPercent = (newY - minY) / (maxY - minY);
-                // Map the scroll percentage to the content's Y position range
-                const contentMaxY = 300; // The top position of content (relative to mask)
-                const contentMinY = -(contentHeight - 600); // The bottom position of content relative to mask
-                // Update scroll container's Y position based on scroll percentage
-                scrollContainer.y = Phaser.Math.Interpolation.Linear([contentMaxY, contentMinY], scrollPercent);
+            // Make the scroll container interactive
+            scrollContainer.setInteractive(new Phaser.Geom.Rectangle(
+                0,
+                0,
+                gameConfig.scale.width - 100, // Width of the scrollable area
+                600 // Height of the scrollable area
+            ), Phaser.Geom.Rectangle.Contains);
+        
+            // Touch start
+            scrollContainer.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                console.log("touc 2");
+                isDragging = true;
+                startY = pointer.y;
+                currentY = scrollContainer.y;
+            });
+        
+            // Touch move
+            this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+                console.log("touc 1");
+                
+                if (!isDragging) return;
+        
+                const deltaY = pointer.y - startY;
+                const newY = currentY + deltaY;
+                console.log(deltaY, newY, startY, pointer.y);
+                
+        
+                // Calculate bounds
+                const maxY = 300; // Top bound
+                const minY = -(contentHeight - 600); // Bottom bound
+        
+                // Clamp the scroll position
+                scrollContainer.y = Phaser.Math.Clamp(newY, minY, maxY);
+        
+                // Update roller position
+                const scrollPercent = (maxY - scrollContainer.y) / (maxY - minY);
+                const rollerMinY = scrollbarBg.getTopCenter().y + roller.height / 2;
+                const rollerMaxY = scrollbarBg.getBottomCenter().y - roller.height / 2;
+                roller.y = Phaser.Math.Linear(rollerMinY, rollerMaxY, scrollPercent);
+            });
+        
+            // Touch end
+            this.scene.input.on('pointerup', () => {
+                console.log("touc 4");
+                isDragging = false;
+            });
+        
+            // Mouse wheel support for desktop
+            this.scene.input.on('wheel', (pointer: any, gameObjects: any, deltaX: number, deltaY: number) => {
+                const currentY = scrollContainer.y;
+                const newY = currentY - deltaY;
+                
+                // Calculate bounds
+                const maxY = 300; // Top bound
+                const minY = -(contentHeight - 600); // Bottom bound
+        
+                // Clamp the scroll position
+                scrollContainer.y = Phaser.Math.Clamp(newY, minY, maxY);
+        
+                // Update roller position
+                const scrollPercent = (maxY - scrollContainer.y) / (maxY - minY);
+                const rollerMinY = scrollbarBg.getTopCenter().y + roller.height / 2;
+                const rollerMaxY = scrollbarBg.getBottomCenter().y - roller.height / 2;
+                roller.y = Phaser.Math.Linear(rollerMinY, rollerMaxY, scrollPercent);
+            });
+        
+            // Prevent default touch behavior
+            this.scene.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
+                pointer.event.preventDefault();
+            });
+        
+            // Optional: Add momentum scrolling
+            let velocity = 0;
+            let lastY = 0;
+            let lastTime = 0;
+        
+            this.scene.time.addEvent({
+                delay: 16,
+                callback: () => {
+                    if (!isDragging && Math.abs(velocity) > 0.1) {
+                        const now = Date.now();
+                        const deltaTime = now - lastTime;
+                        lastTime = now;
+        
+                        const maxY = 300;
+                        const minY = -(contentHeight - 600);
+                        let newY = scrollContainer.y + velocity * deltaTime;
+                        newY = Phaser.Math.Clamp(newY, minY, maxY);
+                        
+                        scrollContainer.y = newY;
+                        velocity *= 0.95; // Apply friction
+        
+                        // Update roller position
+                        const scrollPercent = (maxY - scrollContainer.y) / (maxY - minY);
+                        const rollerMinY = scrollbarBg.getTopCenter().y + roller.height / 2;
+                        const rollerMaxY = scrollbarBg.getBottomCenter().y - roller.height / 2;
+                        roller.y = Phaser.Math.Linear(rollerMinY, rollerMaxY, scrollPercent);
+                    }
+                },
+                loop: true
+            });
+        
+            // Update velocity on pointer move
+            this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+                // console.log("touc 5");
+                if (isDragging) {
+                    const now = Date.now();
+                    const deltaTime = now - lastTime;
+                    if (deltaTime > 0) {
+                        velocity = (pointer.y - lastY) / deltaTime;
+                    }
+                    lastY = pointer.y;
+                    lastTime = now;
+                }
             });
     }
 
@@ -334,7 +443,7 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
     
         const numSteps = 100; // 10 steps for 0.0 to 1.0
         let soundLevel = Math.round(this.SoundManager.getMasterVolume() * (numSteps - 1));
-        let musicLevel = Math.round(this.SoundManager.getSoundVolume("backgroundMusic") * (numSteps - 1));
+        let musicLevel = ResultData.gameData.autoSpinCount;
     
         const infopopupContainer = this.scene.add.container(
             this.scene.scale.width / 2,
@@ -345,7 +454,7 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
         const popupBg = this.scene.add.image(0, 0, 'messagePopup').setDepth(13).setScale(1.8);
         const settingText = this.scene.add.sprite(0, -150, 'SettingHeading').setScale(0.4);
         const autoSpinText = this.scene.add.sprite(0, -40, "autoSpinHeading")
-        this.autoSpinCount = this.scene.add.text(0, 70, "0", {color: "#ffffff", fontSize: "40px", fontFamily: 'Arial'}).setOrigin(0.5);
+        this.autoSpinCount = this.scene.add.text(0, 70, ResultData.gameData.autoSpinCount.toString(), {color: "#ffffff", fontSize: "40px", fontFamily: 'Arial'}).setOrigin(0.5);
        
         const musicScrollbarContainer = this.scene.add.container(-300, 100);
 
@@ -373,8 +482,7 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
 
                 const normalizedLevel = newLevel / (numSteps - 1);
                 if (isSound) {
-                    soundLevel = newLevel;
-                    this.adjustSoundVolume(normalizedLevel);
+                    // this.adjustSoundVolume(normalizedLevel);
                 } else {
                     musicLevel = newLevel;
                     this.adjustMusicVolume(normalizedLevel);
@@ -417,8 +525,12 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
     }
 
    // Function to adjust sound volume
-    adjustSoundVolume(level: number) {
-        this.SoundManager.setMasterVolume(level);
+    adjustSoundVolume() {
+        console.log(currentGameData.soundMode , 'currentGameData.soundMode before');
+        let volumneSound = !currentGameData.soundMode
+        currentGameData.soundMode = volumneSound;
+        console.log(currentGameData.soundMode, 'currentGameData.soundMode after', volumneSound);
+        this.SoundManager.setMusicEnabled(volumneSound);
     }
 
     // Function to adjust music volume

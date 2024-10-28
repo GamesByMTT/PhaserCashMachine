@@ -247,7 +247,7 @@ export class UiContainer extends Phaser.GameObjects.Container {
             pointer.event.stopPropagation();
         });
         const numSteps = 3
-        let betLevelNumber = 2
+        let betLevelNumber = currentGameData.currentBetIndex;
         const infopopupContainer = this.scene.add.container(
             this.scene.scale.width / 2,
             this.scene.scale.height / 2
@@ -268,7 +268,11 @@ export class UiContainer extends Phaser.GameObjects.Container {
             const maxX = scrollBar.width;
             // Calculate position based on discrete steps
             handle.x = minX + (level / (numSteps - 1)) * maxX;
+
         };
+        // Initialize scrollbar position
+        updateScrollbar(betHandle, betScrollBar, betLevelNumber);
+        // betScrollbarContainer.setPosition(-320, 140);
 
         PlusButton.on('pointerdown', () => {
             if (betLevelNumber < numSteps - 1) {
@@ -277,6 +281,9 @@ export class UiContainer extends Phaser.GameObjects.Container {
                 updateScrollbar(betHandle, betScrollBar, betLevelNumber);
                 currentGameData.currentBetIndex = betLevelNumber
                 this.betLevel.setText(initData.gameData.Bets[currentGameData.currentBetIndex])
+                const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
+                Globals.emitter?.Call("betChange");
+                this.CurrentLineText.updateLabelText(betAmount);
                 // updateLevel(betLevelNumber, betHandle, betScrollBar, false);
             }
         });
@@ -289,6 +296,9 @@ export class UiContainer extends Phaser.GameObjects.Container {
                 updateScrollbar(betHandle, betScrollBar, betLevelNumber);
                 currentGameData.currentBetIndex = betLevelNumber
                 this.betLevel.setText(initData.gameData.Bets[currentGameData.currentBetIndex])
+                const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
+                Globals.emitter?.Call("betChange");
+                this.CurrentLineText.updateLabelText(betAmount);
                 // updateLevel(betLevelNumber, betHandle, betScrollBar, false);
             }
         });
@@ -306,7 +316,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
             const values = [0, 1, 2];
             currentGameData.currentBetIndex = values[step]
             this.betLevel.setText(initData.gameData.Bets[currentGameData.currentBetIndex]); // Update the text display
-            console.log(`Selected value: ${values[step]}`, currentGameData.currentBetIndex);
             const betAmount = initData.gameData.Bets[currentGameData.currentBetIndex];
             Globals.emitter?.Call("betChange");
             this.CurrentLineText.updateLabelText(betAmount);
@@ -335,9 +344,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
         }, 0, true);
         
         this.settingClose.setPosition(400, -250).setScale(0.2);
-        // Initialize scrollbar position
-        updateScrollbar(betHandle, betScrollBar, betLevelNumber);
-        // betScrollbarContainer.setPosition(-320, 140);
         infopopupContainer.add([betSettingPopup, betSettingsHeading, betLabel, this.betLevel, this.settingClose, PlusButton, minusButton, betScrollbarContainer]);
     }
 
