@@ -1,7 +1,7 @@
 // SoundManager.ts
 
 import Phaser from 'phaser';
-import { Globals } from './Globals';
+import { currentGameData, Globals } from './Globals';
 
 export default class SoundManager {
     private scene: Phaser.Scene;
@@ -9,6 +9,7 @@ export default class SoundManager {
     private soundEnabled: boolean = true;
     private musicEnabled: boolean = true;
     private masterVolume: number = 1; // New property for master volume
+    private musicKeys: string[] = ["backgroundMusic", "bonusBg", "onSpin", "spinButton", "winMusic", "buttonpressed",]; 
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -21,7 +22,7 @@ export default class SoundManager {
         } else {
             this.sounds[key] = this.scene.sound.add(key, { volume: 0.5 });
         }
-    }
+    } 
 
     public playSound(key: string) {
         if(this.soundEnabled){
@@ -39,7 +40,7 @@ export default class SoundManager {
         Globals.soundResources[key].stop();
     }
 
-    public resumeBgMusic(key: string){
+    public resumeBgMusic(key: string){        
         Globals.soundResources[key].play()
     }
 
@@ -51,10 +52,9 @@ export default class SoundManager {
 
 public setSoundEnabled(enabled: boolean) {
     this.soundEnabled = enabled;
-    if (!enabled) {
         // Stop all sounds when sounds is disabled
-        Object.values(this.sounds).forEach(sounds => sounds.stop());
-    }
+    Object.values(this.sounds).forEach(sounds => sounds.stop());
+    this.setMusicEnabled(this.soundEnabled);
 }
 
 public setMusicEnabled(enabled: boolean) {
@@ -66,28 +66,6 @@ public setMusicEnabled(enabled: boolean) {
         this.playSound("backgroundMusic")
     }
 }
-public setMasterVolume(volume: number) {
-    Globals.masterVolume = Phaser.Math.Clamp(volume, 0, 1);
-    Object.entries(Globals.soundResources).forEach(([key, sound]) => {
-        if (key !== 'backgroundMusic') {
-            this.applyVolumeToSound(sound);
-        }
-    });
-}
-
-public setVolume(key: string, volume: number) {
-    const sound = Globals.soundResources[key];
-    if (sound) {
-        sound.userVolume = Phaser.Math.Clamp(volume, 0, 1);
-        this.applyVolumeToSound(sound);
-    }
-}
-
-private applyVolumeToSound(sound: Howl & { userVolume?: number }) {
-    const finalVolume = Globals.masterVolume * (sound.userVolume || 1);
-    sound.volume(finalVolume);
-}
-
 
 public getSound(key: string): Phaser.Sound.BaseSound | undefined {
     return this.sounds[key];
@@ -99,7 +77,9 @@ private setupFocusBlurEvents() {
         });
 
         window.addEventListener('focus', () => {
-            this.resumeBgMusic('backgroundMusic');
+            if(currentGameData.soundMode){
+                this.resumeBgMusic('backgroundMusic');
+            }
         });
     }
 

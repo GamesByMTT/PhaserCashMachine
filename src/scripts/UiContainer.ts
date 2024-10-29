@@ -257,7 +257,7 @@ export class UiContainer extends Phaser.GameObjects.Container {
         const betScrollBar = this.scene.add.image(0, 0, 'sounProgress').setOrigin(0, 0.5);
         const betHandle = this.scene.add.image(0, 0, 'indicatorSprite').setOrigin(0.5, 0.5).setScale(0.4);
         const PlusButton = this.scene.add.image( 380, 150, "pBtn").setScale(0.2).setInteractive()
-        const minusButton = this.scene.add.image(-380, 150, "pBtn").setScale(0.2).setInteractive()
+        const minusButton = this.scene.add.image(-380, 150, "mBtn").setScale(0.2).setInteractive()
         const betLabel = this.scene.add.text(0, 30, "BET LEVEL", {color: "#ffffff", fontSize: "25px", fontFamily: 'Arial'}).setOrigin(0.5)
         this.betLevel = this.scene.add.text(0, 70, initData.gameData.Bets[currentGameData.currentBetIndex], {color: "#ffffff", fontSize: "40px", fontFamily: 'Arial'}).setOrigin(0.5);
         const betScrollbarContainer = this.scene.add.container(-320, 150);
@@ -277,7 +277,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
         PlusButton.on('pointerdown', () => {
             if (betLevelNumber < numSteps - 1) {
                 betLevelNumber++;
-                console.log(betLevelNumber, "betLevelNumber");
                 updateScrollbar(betHandle, betScrollBar, betLevelNumber);
                 currentGameData.currentBetIndex = betLevelNumber
                 this.betLevel.setText(initData.gameData.Bets[currentGameData.currentBetIndex])
@@ -291,7 +290,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
         // Minus button click handler
         minusButton.on('pointerdown', () => {
             if (betLevelNumber > 0) {
-                console.log(betLevelNumber);
                 betLevelNumber--;
                 updateScrollbar(betHandle, betScrollBar, betLevelNumber);
                 currentGameData.currentBetIndex = betLevelNumber
@@ -385,7 +383,6 @@ export class UiContainer extends Phaser.GameObjects.Container {
     }
 
     singleSpin(spinCallBack: () => void) {
-        console.log("vdfvvfbjfbgbghbghbk");
         this.scene.tweens.add({
             targets: this.newSpinButton,
             duration: 100,

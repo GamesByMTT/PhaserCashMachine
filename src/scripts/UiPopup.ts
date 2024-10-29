@@ -23,9 +23,13 @@ export class UiPopups extends Phaser.GameObjects.Container {
     settingClose!: InteractiveBtn;
     soundEnabled: boolean = true; // Track sound state
     musicEnabled: boolean = true; // Track sound state
+    private volumeOnTexture!: Phaser.Textures.Texture;
+    private volumeOffTexture!: Phaser.Textures.Texture;
 
     constructor(scene: Phaser.Scene, uiContainer: UiContainer, soundManager: SoundManager) {
         super(scene);
+        this.volumeOnTexture = this.scene.textures.get('volumneSpeaker');
+        this.volumeOffTexture = this.scene.textures.get('volumneSpeakerH');
         this.setPosition(0, 0);
         // this.ruleBtnInit();
         this.purpleBg()
@@ -33,7 +37,8 @@ export class UiPopups extends Phaser.GameObjects.Container {
         this.menuBtnInit();
         this.exitButton();
         this.infoBtnInit();
-        this.volumenButton();
+        // this.volumenButton();
+        this.updateVolumeButton();
         this.betSettingBtn();
         this.UiContainer = uiContainer
         this.SoundManager = soundManager
@@ -102,27 +107,25 @@ export class UiPopups extends Phaser.GameObjects.Container {
         this.infoBtn.setPosition(gameConfig.scale.width/ 2 - this.infoBtn.width * 5, this.infoBtn.height * 0.7).setScale(0.5).setDepth(5);
         this.add(this.infoBtn);
     }
-    volumenButton() {
-        let volumneSprites;
-        if(currentGameData.soundMode){
-            volumneSprites = [
-                this.scene.textures.get('volumneSpeaker'),
-                this.scene.textures.get('volumneSpeakerH'),
-            ];
-        }else[
-            volumneSprites = [
-                this.scene.textures.get('volumneSpeaker'),
-                this.scene.textures.get('volumneSpeakerH'),
-            ]
-        ]
-        this.voulmneAdjust = new InteractiveBtn(this.scene, volumneSprites, () => {
-            // info button 
-            this.buttonMusic("buttonpressed")
-            this.openPopUp()
-            this.adjustSoundVolume()
-            // this.openPage();
-        }, 2, false); // Adjusted the position index
-        this.voulmneAdjust.setPosition(gameConfig.scale.width/ 2 - this.voulmneAdjust.width * 5, this.voulmneAdjust.height * 0.7).setDepth(5).setScale(0.5);
+
+    private updateVolumeButton() {
+        // Remove the old volume button if it exists
+        if (this.voulmneAdjust) {
+            this.remove(this.voulmneAdjust, true); // Destroy the old button
+        }
+
+        const textures = currentGameData.soundMode ? 
+            [this.volumeOnTexture, this.volumeOffTexture] : 
+            [this.volumeOffTexture, this.volumeOnTexture];
+
+        this.voulmneAdjust = new InteractiveBtn(this.scene, textures, () => {
+            this.buttonMusic("buttonpressed");
+            this.openPopUp();
+            this.adjustSoundVolume();
+            this.updateVolumeButton(); // Update the button after toggling sound
+        }, 2, false);
+
+        this.voulmneAdjust.setPosition(gameConfig.scale.width / 2 - this.voulmneAdjust.width * 5, this.voulmneAdjust.height * 0.7).setDepth(5).setScale(0.5);
         this.add(this.voulmneAdjust);
     }
 
@@ -211,18 +214,18 @@ export class UiPopups extends Phaser.GameObjects.Container {
         const popupBackground = this.scene.add.sprite( gameConfig.scale.width / 2, gameConfig.scale.height / 2, "InfoPopupBg"); 
         popupContainer.add(popupBackground); 
      
-        // 4. Add a close button to the popup 
-        const closeButton = this.scene.add.sprite( gameConfig.scale.width / 2 + 400, gameConfig.scale.height / 2 - 350, 'exitButton' ).setInteractive(); 
-        closeButton.setScale(0.2);
-        closeButton.on('pointerdown', () => { popupContainer.destroy(); 
-            // Destroy the popup when the close button is clicked 
-            inputOverlay.destroy();
-            scrollContainer.destroy(); 
-            // Destroy the scroll container when the popup is closed
-            }); 
-            popupContainer.add(closeButton); 
-            // 5. Create a mask to define the visible area for scrolling 
-            const maskShape = this.scene.make.graphics().fillRect( 
+        // // 4. Add a close button to the popup 
+        // const closeButton = this.scene.add.sprite( gameConfig.scale.width / 2 + 400, gameConfig.scale.height / 2 - 350, 'exitButton' ).setInteractive(); 
+        // closeButton.setScale(0.2);
+        // closeButton.on('pointerdown', () => { popupContainer.destroy(); 
+        //     // Destroy the popup when the close button is clicked 
+        //     inputOverlay.destroy();
+        //     scrollContainer.destroy(); 
+        //     // Destroy the scroll container when the popup is closed
+        // }); 
+        // popupContainer.add(closeButton); 
+        // 5. Create a mask to define the visible area for scrolling 
+        const maskShape = this.scene.make.graphics().fillRect( 
                 0, // Adjust X position to center 
                 gameConfig.scale.height/2 - 300, // Adjust Y position 
                 gameConfig.scale.width - 100, // Full width minus some padding 
@@ -239,7 +242,7 @@ export class UiPopups extends Phaser.GameObjects.Container {
             // console.log("initData", initData.UIData.symbols);
             
             // 7. Add the content that will be scrolled 
-            const contentHeight = 3000; // Example content height, adjust as needed 
+            const contentHeight = 2900; // Example content height, adjust as needed 
             // const content = this.scene.add.image( gameConfig.scale.width / 2, 100, 'minorSymbolsHeading' ).setOrigin(0.5).setDepth(2); 
             const content = this.scene.add.image( gameConfig.scale.width / 2, 0, 'payHelp' ).setScale(0.6);
             const line1 = this.scene.add.text(gameConfig.scale.width / 2.9, 100, "All pays shown in credits",  { fontSize: '22px', color: '#ffffff', align: "left", fontFamily: "Arial" } )
@@ -289,7 +292,16 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
             // 9. Roller image for the scrollbar 
             const roller = this.scene.add.image( gameConfig.scale.width/1.5, gameConfig.scale.height / 2 - 200, 'scrollerView' ).setOrigin(0.5).setInteractive({ draggable: true }); 
             popupContainer.add(roller); 
-            // 10. Add drag event listener to the roller 
+
+            const closeButton = this.scene.add.sprite(gameConfig.scale.width / 2 + 400, gameConfig.scale.height / 2 - 350, 'exitButton').setInteractive(); // Adjust y-position as needed
+                closeButton.setScale(0.2);
+                closeButton.on('pointerdown', () => {
+                    inputOverlay.destroy();
+                    scrollContainer.destroy();  
+                    popupContainer.destroy(); // Now destroys everything correctly
+                });
+                popupContainer.add(closeButton); 
+                        // 10. Add drag event listener to the roller 
             this.scene.input.setDraggable(roller); 
             roller.on('drag', (pointer: any, dragX: number, dragY: number) => {
                 // Keep the roller within the scrollbar bounds
@@ -316,7 +328,7 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
                 0,
                 0,
                 gameConfig.scale.width - 100, // Width of the scrollable area
-                600 // Height of the scrollable area
+                2900 // Height of the scrollable area
             ), Phaser.Geom.Rectangle.Contains);
         
             // Touch start
@@ -329,15 +341,10 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
         
             // Touch move
             this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-                console.log("touc 1");
-                
                 if (!isDragging) return;
-        
                 const deltaY = pointer.y - startY;
                 const newY = currentY + deltaY;
-                console.log(deltaY, newY, startY, pointer.y);
-                
-        
+                // console.log(deltaY, newY, startY, pointer.y);
                 // Calculate bounds
                 const maxY = 300; // Top bound
                 const minY = -(contentHeight - 600); // Bottom bound
@@ -354,7 +361,6 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
         
             // Touch end
             this.scene.input.on('pointerup', () => {
-                console.log("touc 4");
                 isDragging = false;
             });
         
@@ -378,9 +384,9 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
             });
         
             // Prevent default touch behavior
-            this.scene.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
-                pointer.event.preventDefault();
-            });
+            // this.scene.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
+            //     pointer.event.preventDefault();
+            // });
         
             // Optional: Add momentum scrolling
             let velocity = 0;
@@ -526,11 +532,8 @@ Misuse or malfunction voids all pays and plays.`, {fontSize: '22px', color: '#ff
 
    // Function to adjust sound volume
     adjustSoundVolume() {
-        console.log(currentGameData.soundMode , 'currentGameData.soundMode before');
-        let volumneSound = !currentGameData.soundMode
-        currentGameData.soundMode = volumneSound;
-        console.log(currentGameData.soundMode, 'currentGameData.soundMode after', volumneSound);
-        this.SoundManager.setMusicEnabled(volumneSound);
+        currentGameData.soundMode = !currentGameData.soundMode; // Toggle sound mode
+        this.SoundManager.setSoundEnabled(currentGameData.soundMode);
     }
 
     // Function to adjust music volume

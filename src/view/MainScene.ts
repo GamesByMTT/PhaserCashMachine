@@ -85,7 +85,6 @@ export default class MainScene extends Scene {
         // Container for better organization and potential performance
         this.mainContainer = this.add.container();
         this.soundManager = new SoundManager(this);
-        console.log("MainScene Loaded on Cash Machine");
         this.taskbar = this.add.sprite(width/2, height/1.1, "taskBar").setDepth(20);
         this.whatUSeeText = this.add.sprite(width/2, height/3.85, "whatUSeeText").setScale(0.3).setDepth(20);
         this.playBtnBg = this.add.sprite(width/1.12, height/1.15, "playButtonBg").setDepth(20);
@@ -119,7 +118,11 @@ export default class MainScene extends Scene {
    
 
     private onResultCallBack() {
-        this.uiContainer.onSpin(false);
+        if(ResultData.gameData.hasReSpin || ResultData.gameData.hasRedSpin){
+            this.uiContainer.onSpin(true);
+        }else{
+            this.uiContainer.onSpin(false);
+        }
         this.soundManager.stopSound("onSpin"); 
         // this.lineGenerator.showLines(ResultData.gameData.linesToEmit);
     }
@@ -128,7 +131,9 @@ export default class MainScene extends Scene {
         this.soundManager.playSound("onSpin");
         this.slot.moveReel();
         if(ResultData.gameData.isReSpinRunning){
-            this.slot.stopTween()
+            this.time.delayedCall(1000, () => {
+                this.slot.stopTween()
+            })
         }
         // this.lineGenerator.hideLines();
     }
@@ -186,6 +191,7 @@ export default class MainScene extends Scene {
                 this.slot.stopTween();
             }, 1000);
             if(ResultData.gameData.hasReSpin || ResultData.gameData.hasRedSpin){
+                this.uiContainer.onSpin(true)
                 this.time.delayedCall(2000, () => {
                     if(this.greenLogo){
                         this.greenLogo.destroy()
@@ -196,10 +202,7 @@ export default class MainScene extends Scene {
                 const totalNumberOfRespin = ResultData.gameData.resultSymbols.length - 1
                 for(let i = 0; i<totalNumberOfRespin; i++){
                     setTimeout(() => {
-                        console.log(ResultData.gameData.countReSpin);
-                        
                         ResultData.gameData.countReSpin += 1;
-                        console.log(ResultData.gameData.countReSpin);
                         ResultData.gameData.isReSpinRunning = true;
                         if (i === totalNumberOfRespin - 1) {
                             // Set hasReSpin to false after a short delay
@@ -213,6 +216,7 @@ export default class MainScene extends Scene {
                                     this.respinSprite.destroy();
                                     this.respinSprite = null;
                                     this.changeColor("green")
+                                    this.uiContainer.onSpin(false)
                                     // this.greenLogo = this.add.sprite(this.cameras.main.width/2, this.cameras.main.height/6.2, `${this.Color}Logo`).setScale(0.8);
                                 }
                             }, 3000); // Short delay to ensure it runs after the last respin

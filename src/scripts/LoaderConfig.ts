@@ -33,6 +33,8 @@ export const LoaderConfig = {
     autoSpinOnPressed : "/src/sprites/ButtonAutoSpinHover_1.png",
     pBtn  :  "/src/sprites/ButtonPlus.png",
     pBtnH  :  "/src/sprites/ButtonPlusHover.png",
+    mBtn: "src/sprites/ButtonMinus.png",
+    mBtnH: "src/sprites/ButtonMinusHover.png",
 
     MenuBtn :  "/src/sprites/ButtonMenu.png",
     MenuBtnH :  "/src/sprites/ButtonMenuHover.png",

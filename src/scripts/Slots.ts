@@ -63,7 +63,6 @@ export class Slots extends Phaser.GameObjects.Container {
         this.symbolHeight = exampleSymbol.displayHeight/3;
         this.spacingX = this.symbolWidth * 3.25; // Add some spacing
         this.spacingY = this.symbolHeight * 2.5; // Add some spacing
-        // console.log(this.symbolHeight, "symbolHeightsymbolHeightsymbolHeight");
         const startPos = {
             x: gameConfig.scale.width /4.1,
             y: gameConfig.scale.height /1.85    
@@ -204,7 +203,6 @@ export class Slots extends Phaser.GameObjects.Container {
                 for (let x = 0; x < row.length; x++) {
                     const elementId = row[x];
                     if (elementId == '0') { 
-                        console.log(x, "wwhich column");
                         this.startReelSpin(x);
                     }
                 }
@@ -347,7 +345,6 @@ export class Slots extends Phaser.GameObjects.Container {
         const animationColor = ResultData.gameData.hasRedSpin ? "red" : this.Color;
         // const animationId = `symbol_anim_${elementId}`;
         const animationId = `symbol_anim_${elementId}_${animationColor}`;
-        console.log(animationColor, "this.Color in playSymbolAnimation", animationId);
          // Remove existing animation if it exists
         if (this.scene.anims.exists(animationId)) {
             this.scene.anims.remove(animationId);
@@ -518,7 +515,6 @@ class Symbols {
         this.symbol.play(animationId);
     }
     stopAnimation() {
-        // console.log(this.symbol.anims.isPlaying);
         if (this.symbol.anims.isPlaying) {
             this.symbol.anims.stop();
         } 

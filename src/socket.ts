@@ -43,11 +43,9 @@ export class SocketManager {
     });
 
     this.socket.on("connect", () => {
-      console.log("Connected to the server");
       this.socket.on("message", (message : any) => {
         const data = JSON.parse(message);
         if(data.id == "InitData" ) {
-          console.log(data, "data");
           if(initData.gameData.Bets.length != 0){
             if(Globals.SceneHandler?.getScene("Disconnection")){
               Globals.SceneHandler.removeScene("Disconnection");
@@ -69,7 +67,6 @@ export class SocketManager {
                 Globals.emitter?.Call("ResultData");
             }, 1000);
             console.log("ResultData", data.message.gameData);
-            
         }
       });
     });
