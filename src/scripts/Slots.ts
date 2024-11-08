@@ -156,8 +156,17 @@ export class Slots extends Phaser.GameObjects.Container {
         const allSpriteKeys = Object.keys(Globals.resources); // Get all keys from Globals.resources
         const filteredSprites = allSpriteKeys.filter(spriteName => {
             const regex = new RegExp(`^${this.Color}slots\\d+_\\d+$`);
-            return regex.test(spriteName);
+            if(regex.test(spriteName)){
+                const [, num1, num2] = (this.Color == "green" 
+                    ? spriteName.match(/^greenslots(\d+)_(\d+)$/) 
+                    : spriteName.match(/^redslots(\d+)_(\d+)$/))! || [];
+                    const number1 = parseInt(num1, 10);
+                    const number2 = parseInt(num2, 10);
+                    // Check if the numbers are within the desired range
+                return number1 >= 0 && number1 <= 7 && number2 >= 0 && number2 <= 36;
+            }
         });
+        console.log(filteredSprites, "filteredSprites");
         
         return filteredSprites;
     }
@@ -451,7 +460,7 @@ class Symbols {
     startX: number = 0;
     startMoving: boolean = false;
     index: { x: number; y: number };
-    totalSymbol : number = 7;
+    totalSymbol : number = 28;
     visibleSymbol: number = 3;
     startIndex: number = 1;
     spacingY : number = 204;

@@ -180,7 +180,6 @@ export default class MainScene extends Scene {
         }
     }
 
-
     recievedMessage(msgType: string, msgParams: any) {
         if (msgType === 'ResultData') {
             setTimeout(() => {

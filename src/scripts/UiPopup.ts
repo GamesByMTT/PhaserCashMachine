@@ -213,18 +213,6 @@ export class UiPopups extends Phaser.GameObjects.Container {
         const popupContainer = this.scene.add.container(0, 0).setDepth(11); 
         const popupBackground = this.scene.add.sprite( gameConfig.scale.width / 2, gameConfig.scale.height / 2, "InfoPopupBg"); 
         popupContainer.add(popupBackground); 
-     
-        // // 4. Add a close button to the popup 
-        // const closeButton = this.scene.add.sprite( gameConfig.scale.width / 2 + 400, gameConfig.scale.height / 2 - 350, 'exitButton' ).setInteractive(); 
-        // closeButton.setScale(0.2);
-        // closeButton.on('pointerdown', () => { popupContainer.destroy(); 
-        //     // Destroy the popup when the close button is clicked 
-        //     inputOverlay.destroy();
-        //     scrollContainer.destroy(); 
-        //     // Destroy the scroll container when the popup is closed
-        // }); 
-        // popupContainer.add(closeButton); 
-        // 5. Create a mask to define the visible area for scrolling 
         const maskShape = this.scene.make.graphics().fillRect( 
                 0, // Adjust X position to center 
                 gameConfig.scale.height/2 - 300, // Adjust Y position 
